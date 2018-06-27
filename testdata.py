@@ -455,7 +455,7 @@ testdata = [
      map_day("Monday"), None, time(15), None, "Homework 5 due",
      "3 Towne Hall"),
 
-    ("The retreat is from Jan 12 - 29. at The Beach House", 
+    ("The retreat is from Jan 12 - 29, at The Beach House", 
      next_day(1, 12), next_day(1, 12) + timedelta(days=17), None, None, 
      "retreat", "The Beach House"),
 
@@ -641,10 +641,10 @@ testdata = [
      None, None, time(17), time(18), "Meeting", "Warren Weaver Hall"),
 
     ("Meeting at 5-630p", 
-     None, None, time(17), time(18, 20), "Meeting"), 
+     None, None, time(17), time(18, 20), "Meeting", None), 
 
     ("Meeting at 5-630", 
-     None, None, time(17), time(18, 20), "Meeting"), 
+     None, None, time(17), time(18, 20), "Meeting", None), 
 
     ("Fondue at Fondue Palace tomorrow at seven thirty pm", 
      tomorrow, None, time(19, 30), None, "Fondue", "Fondue Palace"),
@@ -764,7 +764,7 @@ testdata = [
      "666 Main Street"),
 
     ("Conference call Monday 9am", 
-     map_day("Monday"), None, time(9), None, "Conference call"),
+     map_day("Monday"), None, time(9), None, "Conference call", None),
 
     ("Workout at Power 10 Thursday at 11:30", 
      map_day("Thursday"), None, time(11, 30), None, "Workout", "Power 10"),
@@ -1082,3 +1082,5 @@ testdata = [
      tomorrow, None, time(18), None, "Mimosa's", "Vasu's")
 ]
      
+for t in testdata:
+    assert(len(t) == 7)

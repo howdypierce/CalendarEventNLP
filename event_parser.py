@@ -5,7 +5,7 @@ import re
 import sys
 from datetime import *
 from dateutil import relativedelta
-from etoken import EToken, padded
+from etoken import *
 from spelled_numbers import handle_spelled_number
 from testdata import testdata
 
@@ -82,14 +82,14 @@ def remove_poss(tagged):
     return ret
 
 
-def parse_for_time_date_range(tok: EToken, lookahead: EToken = None) -> list:
+def parse_for_time_date_range(tok: EToken, lookahead: EToken) -> list:
     """If this single token appears to be of the form (time)-(time) or
     (date)-(date), return three tokens: "start" "to" "end"; else
     just return a one-item list containing the token.
     """
 
     # time
-    ampm       =  r"(?:(?:[ap]m?)|(?:[ap]\.m\.))"  # a, am, a.m.
+    ampm       =  r"(?:(?:[ap]m?)|(?:[ap]\.?m\.?))"  # a, am, a.m.
     timespec   = r"\d{1,2}:\d{2}(?::\d{2})?" + ampm + "?" # hh:mm[:ss][am]
     hourspec_m = r"\d{1,2}" + ampm   # hh[am] - am/pm present
     hourspec   = hourspec_m + "?"    # hh[am] - am/pm optional
@@ -129,7 +129,7 @@ def parse_for_time_date_range(tok: EToken, lookahead: EToken = None) -> list:
         end = EToken(m.group(2), "CD", "END_TIME")
         return [start, to, end]
 
-    if (lookahead and lookahead.match(meridian_txt)):
+    if (lookahead.match(meridian_txt)):
         m = re.match(f"^({hourspec})-({hourspec})$", tok.val)
         if m:
             start = EToken(m.group(1), "CD", "ST_TIME")
@@ -155,7 +155,7 @@ def parse_for_time_date_range(tok: EToken, lookahead: EToken = None) -> list:
         return [tok]
 
     ## hh o'clock
-    if (lookahead and lookahead.match(["o'clock", "oclock"])):
+    if (lookahead.match(["o'clock", "oclock"])):
         m = re.match(r"^(\d{1,2})$", tok.val)
         if m:
             tok.val = f"{m.group(1)}:00"
@@ -257,7 +257,7 @@ def parse_time(s: str) -> time:
     # TODO: there's a quite a bit of overlap between this function and
     # parse_for_time_date_range -- would like to collapse these into
     # one
-    ampm     = r"((?:[ap]m?)|(?:[ap]\.m\.))?"  # a, am, a.m.
+    ampm     = r"((?:[ap]m?)|(?:[ap]\.?m\.?))?"  # a, am, a.m.
     timespec = r"^(\d{1,2}):(\d{2})(:\d{2})?" + ampm + "$" # hh:mm[:ss][am]
     hourspec = r"^(\d{1,2})" + ampm + "$"    # hh[am]
     milspec  = r"^(\d{1,2})(\d{2})" + ampm + "$"    # hhmm[am], 1 or 2 h digits
@@ -427,8 +427,8 @@ def parse_possible_spelled_date(t_mon: EToken,
        t_year - either None, or a possible year in CD form
 
     If possible, parse this into a datetime.date, and update the
-    tokens. The datetime.date object will be hung on the t_mon token,
-    and the t_day (and t_year, if used) tokens will be set to IGN.
+    tokens. The datetime.date object will be hung on the t_day token,
+    and the t_mon (and t_year, if used) tokens will be set to IGN.
 
     Return True if parsable, False otherwise.
     """
@@ -445,9 +445,10 @@ def parse_possible_spelled_date(t_mon: EToken,
                     t_year.sem = "IGN"
         if not year:
             year = year_from_month_and_day(month, day)
-        if t_mon.sem == "-": t.sem = "DATE"
-        t_mon.date = date(year, month, day)
-        t_day.sem = "IGN"
+        t_day.date = date(year, month, day)
+        t_day.val = f"{year}/{month}/{day}"
+        if t_day.sem == "-": t_day.sem = "DATE"
+        t_mon.sem = "IGN"
         return True
     except:
         return False
@@ -463,6 +464,29 @@ def parse_phrase(tok_list: list):
 
     t = padded(tok_list, 10)
 
+    # (from - optional) (month) (OD or CD) (to | until | til) (OD or CD)
+    #       (comma - opt) (CD - opt year)
+    # TODO: add until/til
+    m = 0
+    if t[0].match("from", "IN"):
+        m += 1
+    if (t[m].match(month_to_num) and t[m+1].match(pos=["OD","CD"])
+        and t[m+2].match("to","TO") and t[m+3].match(pos=["OD","CD"])):
+        t[0].sem = "IGN"
+        y = m+4
+        if t[y].match(",", pos=","): y += 1
+        if t[y].match(pos="CD"):
+            year_tok = t[y]
+        else:
+            year_tok = None
+        res = parse_possible_spelled_date(t[m], t[m+1], t[y])
+        if res:
+            res = parse_possible_spelled_date(t[m], t[m+3], t[y])
+        if res:
+            t[m+1].sem = "ST_DATE"
+            t[m+3].sem = "END_DATE"
+            return
+    
     # (at) (time or CD)
     if (t[0].match("at", "IN") and 
         (t[1].match(sem=EToken.time_sems) or t[1].match(sem="-", pos="CD"))):
@@ -471,6 +495,7 @@ def parse_phrase(tok_list: list):
         if not t[1].match(sem=EToken.time_sems): t[1].sem = "TIME"
         return
 
+    # TODO: add optional from
     # (date) (to or until or til) (date)
     if (t[0].match(sem=EToken.date_sems) and t[1].sem != "IGN" and
         (t[1].match("to", "TO") or t[1].match("until", "IN") or t[1].match("til")) 
@@ -482,6 +507,7 @@ def parse_phrase(tok_list: list):
         t[2].sem = "END_DATE"
         return
     
+    # TODO: add optional from
     # (time or CD) (to or until or til) (time or CD)
     if ((t[0].match(sem=EToken.time_sems) or t[0].match(sem="-", pos="CD")) and
         t[1].sem != "IGN" and
@@ -552,12 +578,11 @@ def parse_phrase(tok_list: list):
             t[0].date = anchor + timedelta(days=num)
         t[0].sem = "DATE"
         t[1].sem = "IGN"
+        return
+
 
     # TODO!
     
-    # yyyy month dd
-    # mm dd yyyy
-    # yyyy mm dd
     # in dd (minutes | hours | days)
 
 
@@ -575,7 +600,7 @@ def parse(raw, debug = False):
         token_list.append(EToken(*t))
 
     ol = []
-    for (tok, lookahead) in zip(token_list, token_list[1:] + [None]):
+    for (tok, lookahead) in zip(token_list, token_list[1:] + [ETokenNull()]):
         ol.extend(parse_for_time_date_range(tok, lookahead))
     token_list = ol
 
@@ -620,6 +645,9 @@ def parse(raw, debug = False):
     # Second pass: parse for phrases
     for i in range(len(token_list)):
         parse_phrase(token_list[i:])
+
+    if (debug):
+        print(f"after phrase parsing: {token_list}")
 
     # Third pass: find any times/dates not yet parsed
     for t in token_list:
@@ -692,35 +720,38 @@ def parse(raw, debug = False):
 
 
 def test_parse(input_tuple) -> bool:
-    """Test parse the input tuple, return True on pass, False on fail"""
+    """Test parse the input tuple, return results.
+
+    Returns a tuple (date_score, time_score, metadata_score). If the
+    input was parsed perfectly, this tuple would be (2, 2, 2).
+    """
 
     raw = input_tuple[0]
     res = parse(raw)
 
-    # evaluate how we did: right now just looking at time & dates
-    score = 0
-    for x, y in zip(res[2:4], input_tuple[3:5]):
-        if x == y:
-            score += 1
+    # evaluate how we did
+    date_score = int(res[0] == input_tuple[1]) + int(res[1] == input_tuple[2])
+    time_score = int(res[2] == input_tuple[3]) + int(res[3] == input_tuple[4])
+    metadata_score = int(res[4] == input_tuple[5]) + int(res[5] == input_tuple[6])
 
-    if (score != 2):
+    if (date_score != 2 or time_score != 2):
         print(f"{raw}, {res}")
-        return False
 
-    return True
+    return (date_score, time_score, metadata_score)
 
 
 def run():
-    success = 0
+    date_success = 0
+    time_success = 0
+    metadata_success = 0
     for t in testdata:
-        if (test_parse(t)):
-            success += 1
+        res = test_parse(t)
+        if res[0] == 2: date_success += 1
+        if res[1] == 2: time_success += 1
+        if res[2] == 2: metadata_success += 1
 
-    print(f"Correctly parsed {success} of {len(testdata)}")
+    print(f"Correctly parsed (date: {date_success}, time: {time_success}, "
+          f"md: {metadata_success}) of {len(testdata)}")
         
 run()
 
-#parse("Family vacation from August 9th - 18th in Mexico", True)
-#parse("Family vacation from 8/9 - 8/18 in Mexico", True)
-#parse("Meet 8-10 pm", True)
-#parse("Meet 8-10pm", True)
