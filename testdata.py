@@ -77,7 +77,8 @@ def next_day(mon: int, day:int) -> date:
 def in_x_min(minutes: int) -> time:
     """Return a time that is the specified minutes in the future"""
     now = datetime.now()
-    return (now + timedelta(minutes=minutes)).time()
+    tm = (now + timedelta(minutes=minutes)).time()
+    return tm.replace(second=0, microsecond=0)
     
 def in_x_months(mons: int, anchor: date = today) -> date:
     """Return the date that is the specified number of months in the
@@ -559,14 +560,41 @@ testdata = [
     ("Dinner at 6", 
      None, None, time(18), None, "Dinner", None),
 
+    ("Dinner at 7", 
+     None, None, time(19), None, "Dinner", None),
+
+    ("Dinner at 8:15", 
+     None, None, time(20,15), None, "Dinner", None),
+
+    ("Breakfast at 6", 
+     None, None, time(6), None, "Breakfast", None),
+
+    ("Breakfast at 7", 
+     None, None, time(7), None, "Breakfast", None),
+
+    ("Breakfast at 8:15", 
+     None, None, time(8,15), None, "Breakfast", None),
+
     ("Pick up Joe tomorrow at LAX at 8pm", 
      tomorrow, None, time(20), None, "Pick up Joe", "LAX"),
 
     ("Pick up Joe the day after tomorrow at LAX at 8pm", 
      tomorrow + timedelta(days=1), None, time(20), None, "Pick up Joe", "LAX"),
 
+    ("Go home the day after July 4", 
+     next_day(7,5), None, None, None, "Go home", None),
+
     ("Cycling class @6 for 1.5h", 
      None, None, time(6), time(7, 30), "Cycling class", None),
+
+    ("Cycling class @6 for 1.5 h", 
+     None, None, time(6), time(7, 30), "Cycling class", None),
+
+    ("Cycling class @6 for 1.5 hours", 
+     None, None, time(6), time(7, 30), "Cycling class", None),
+
+    ("Cycling class @6 for 2 hours", 
+     None, None, time(6), time(8), "Cycling class", None),
 
     ("Next Tuesday Jogging in the Park @8a for 90 min", 
      map_day("Tuesday"), None, time(8), time(9, 30), "Jogging", "the Park"),
@@ -640,11 +668,55 @@ testdata = [
     ("Meeting at 5 til 6 at Warren Weaver Hall", 
      None, None, time(17), time(18), "Meeting", "Warren Weaver Hall"),
 
+    ("Meeting from 5 until 7 at Warren Weaver Hall", 
+     None, None, time(17), time(19), "Meeting", "Warren Weaver Hall"),
+
+    ("Meeting from 5 thru 7 at Warren Weaver Hall", 
+     None, None, time(17), time(19), "Meeting", "Warren Weaver Hall"),
+
+    ("Meeting from 5 through 7 at Warren Weaver Hall", 
+     None, None, time(17), time(19), "Meeting", "Warren Weaver Hall"),
+
+    ("Meeting from 5 to 7 at Warren Weaver Hall", 
+     None, None, time(17), time(19), "Meeting", "Warren Weaver Hall"),
+
+    ("Meeting from 5 till 7 at Warren Weaver Hall", 
+     None, None, time(17), time(19), "Meeting", "Warren Weaver Hall"),
+
     ("Meeting at 5-630p", 
-     None, None, time(17), time(18, 20), "Meeting", None), 
+     None, None, time(17), time(18, 30), "Meeting", None), 
 
     ("Meeting at 5-630", 
-     None, None, time(17), time(18, 20), "Meeting", None), 
+     None, None, time(17), time(18, 30), "Meeting", None), 
+
+    ("Meeting at 8-915p", 
+     None, None, time(20), time(21, 15), "Meeting", None), 
+
+    ("Meeting at 8 in the evening", 
+     None, None, time(20), None, "Meeting", None), 
+
+    ("Meeting at 8 in the morning", 
+     None, None, time(8), None, "Meeting", None), 
+
+    ("Swimming at 4 in the morning", 
+     None, None, time(4), None, "Swimming", None), 
+
+    ("Meeting at 9 at night", 
+     None, None, time(21), None, "Meeting", None), 
+
+    ("Meeting at 9 in the morning", 
+     None, None, time(9), None, "Meeting", None), 
+
+    ("Training Friday 1100-1200 in the big tent",
+     map_day("Friday"), None, time(11), time(12), "Training", "the big tent"),
+
+    ("Training Friday 1500-1730 in the big tent",
+     map_day("Friday"), None, time(15), time(17, 30), "Training",
+     "the big tent"),
+
+    ("Training Friday 1100-130p in the big tent",
+     map_day("Friday"), None, time(11), time(13, 30), "Training",
+     "the big tent"),
 
     ("Fondue at Fondue Palace tomorrow at seven thirty pm", 
      tomorrow, None, time(19, 30), None, "Fondue", "Fondue Palace"),
@@ -735,6 +807,9 @@ testdata = [
 
     ("Running w/ Pat in 20 MIN", 
      today, None, in_x_min(20), None, "Running w/ Pat", None),
+
+    ("Running w/ Pat in 2.5 hours", 
+     today, None, in_x_min(150), None, "Running w/ Pat", None),
 
     ("Running with Pat 2:15 - 3 pm tomorrow", 
      tomorrow, None, time(14, 15), time(15), "Running w/ Pat", None),

@@ -17,7 +17,6 @@ class EToken():
            TITLE
            LOCATION
            DURATION
-           PARTICIPANT
            IGN  (means "should be ignored")
            - (means "unknown")
 
