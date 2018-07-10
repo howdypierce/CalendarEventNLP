@@ -40,7 +40,6 @@ year_range = [1901, 2099]
 
 # regexps to parse for time
 ampm       = r"((?:[ap]m?)|(?:[ap]\.?m\.?))"  # a, am, a.m.
-timespec_m = r"(\d{1,2}):(\d{2})(:\d{2})?" + ampm + ""  # hh:mm[:ss]am
 timespec   = r"(\d{1,2}):(\d{2})(:\d{2})?" + ampm + "?"  # hh:mm[:ss][am]
 hourspec_m = r"(\d{1,2})" + ampm          # hham, hh in range 1..12
 hourspec   = r"(\d{1,2})" + ampm + "?"    # hh[am], hh in range 1..23
@@ -48,6 +47,22 @@ milspec    = r"(\d{2})(\d{2})"            # hhmm, all 4 digits present
 nocolon_m  = r"(\d{1,2})(\d{2})" + ampm   # hhmmam, 1 or 2 h digits
 nocolon    = nocolon_m + "?"              # hhmm[am], 1 or 2 h digits
 oclspec    = r"(\d{1,2})o'?clock"  # hho'clock, hh in range 1..12
+mid_noon   = r"(midnight)|(noon)"
+
+# following matches strings that are unambiguously times
+re_time_certain = ( "(" + timespec + ")|"
+                    "(" + hourspec_m + ")|"
+                    "(" + nocolon_m + ")|"
+                    "(" + oclspec + ")|"
+                    "(" + mid_noon + ")" )
+
+# more permissive, anything that might be a time; must be a superset
+# of re_time_certain
+re_time_possible = ( "(" + timespec + ")|"
+                     "(" + hourspec + ")|"
+                     "(" + nocolon + ")|"
+                     "(" + oclspec + ")|"
+                     "(" + mid_noon + ")" )
 
 def parse_time_to_norm(s: str) -> str:
     """Attempt to parse a string into a time.
@@ -363,113 +378,58 @@ date_strings = [ ("2014/5/3", "absdate:05/03/2014"),
 
 for v in date_strings: test_parse_date_to_norm(*v)
 
-def parse_for_time_date_range(tok: EToken, lookahead: EToken) -> list:
+def parse_time_date_range(tok: EToken, lookahead: EToken) -> list:
     """If this single token appears to be of the form (time)-(time) or
     (date)-(date), return three tokens: "start" "to" "end"; else
-    return None.
+    return None.  Also considers a lookahead token.
     """
 
-    m = re.match(f"^({timespec})-({timespec})$", tok.val)
-    if m:
-        st = parse_time_to_norm(m.group(1))
-        end = parse_time_to_norm(m.group(6))
-        if st is not None and end is not None:
-            return [EToken(st, "TIME", "ST_TIME"),
-                    EToken("UNTIL", ":", "IGN"),
-                    EToken(end, "TIME", "ST_TIME")]
+    append_second = ""
+    ignore_lookahead = False
 
-    m = re.match(f"^({timespec})-({hourspec})$", tok.val)
-    if m:
-        st = parse_time_to_norm(m.group(1))
-        end = parse_time_to_norm(m.group(6))
-        if st is not None and end is not None:
-            return [EToken(st, "TIME", "ST_TIME"),
-                    EToken("UNTIL", ":", "IGN"),
-                    EToken(end, "TIME", "ST_TIME")]
+    # time ranges
+    
+    m = re.fullmatch(f"(?P<first>{re_time_certain})-(?P<second>{re_time_possible})",
+                     tok.val)
+    if not m:
+        m = re.fullmatch(f"(?P<first>{re_time_possible})-(?P<second>{re_time_certain})",
+                         tok.val)
 
-    m = re.match(f"^({hourspec})-({timespec})$", tok.val)
-    if m:
-        st = parse_time_to_norm(m.group(1))
-        end = parse_time_to_norm(m.group(4))
-        if st is not None and end is not None:
-            return [EToken(st, "TIME", "ST_TIME"),
-                    EToken("UNTIL", ":", "IGN"),
-                    EToken(end, "TIME", "ST_TIME")]
+    if not m:
+        m = re.fullmatch(f"(?P<first>{milspec})-(?P<second>{milspec})",
+                         tok.val)
 
-    m = re.match(f"^({hourspec_m})-({hourspec})$", tok.val)
-    if m:
-        st = parse_time_to_norm(m.group(1))
-        end = parse_time_to_norm(m.group(4))
-        if st is not None and end is not None:
-            return [EToken(st, "TIME", "ST_TIME"),
-                    EToken("UNTIL", ":", "IGN"),
-                    EToken(end, "TIME", "ST_TIME")]
+    if not m and lookahead.match(meridian_txt):
+        m = re.fullmatch(f"(?P<first>{re_time_possible})-(?P<second>{re_time_possible})",
+                         tok.val)
+        append_second = lookahead.val
+        ignore_lookahead = True
 
-    m = re.match(f"^({hourspec})-({hourspec_m})$", tok.val)
     if m:
-        st = parse_time_to_norm(m.group(1))
-        end = parse_time_to_norm(m.group(4))
+        st = parse_time_to_norm(m.group("first"))
+        end = parse_time_to_norm(m.group("second") + append_second)
         if st is not None and end is not None:
-            return [EToken(st, "TIME", "ST_TIME"),
-                    EToken("UNTIL", ":", "IGN"),
-                    EToken(end, "TIME", "ST_TIME")]
-
-    m = re.match(f"^({hourspec})-({nocolon_m})$", tok.val)
-    if m:
-        st = parse_time_to_norm(m.group(1))
-        end = parse_time_to_norm(m.group(4))
-        if st is not None and end is not None:
-            return [EToken(st, "TIME", "ST_TIME"),
-                    EToken("UNTIL", ":", "IGN"),
-                    EToken(end, "TIME", "ST_TIME")]
-
-    m = re.match(f"^({milspec})-({milspec})$", tok.val)
-    if m:
-        st = parse_time_to_norm(m.group(1))
-        end = parse_time_to_norm(m.group(4))
-        if st is not None and end is not None:
-            return [EToken(st, "TIME", "ST_TIME"),
-                    EToken("UNTIL", ":", "IGN"),
-                    EToken(end, "TIME", "ST_TIME")]
-
-    if (lookahead.match(meridian_txt)):
-        m = re.match(f"^({hourspec})-({hourspec})$", tok.val)
-        if m:
-            st = parse_time_to_norm(m.group(1))
-            end = parse_time_to_norm(m.group(4) + lookahead.val)
-            if st is not None and end is not None:
+            if ignore_lookahead:
                 lookahead.sem = "IGN"
-                return [EToken(st, "TIME", "ST_TIME"),
-                        EToken("UNTIL", ":", "IGN"),
-                        EToken(end, "TIME", "ST_TIME")]
+            return [EToken(st, "TIME", "ST_TIME"),
+                    EToken("UNTIL", ":", "IGN"),
+                    EToken(end, "TIME", "ST_TIME")]
 
-        m = re.match(f"^({hourspec})|({milspec})$", tok.val)
-        if m:
-            st = parse_time_to_norm(tok.val + lookahead.val)
-            if st is not None:
-                lookahead.sem = "IGN"
-                return [EToken(st, "TIME", "TIME")]
-
-    spec = (f"^({timespec})|({hourspec_m})|({milspec})|({nocolon_m})|"
-            f"({oclspec})$")
-    m = re.match(spec, tok.val)
-    if m:
-        val = parse_time_to_norm(tok.val)
-        if val: return [EToken(val, "TIME", "TIME")]
-
-    ## hh o'clock, two tokens
-    if (lookahead.match(["o'clock", "oclock"])):
-        m = re.match(r"^(\d{1,2})$", tok.val)
-        if m:
-            val = parse_time_to_norm(m.group(0)+"oclock")
+    # parse standalone time
+    if lookahead.match(meridian_txt + ["o'clock", "oclock"]):
+        m = re.fullmatch(re_time_possible, tok.val)
+        if m: 
+            val = parse_time_to_norm(tok.val + lookahead.val)
             if val:
                 lookahead.sem = "IGN"
                 return [EToken(val, "TIME", "TIME")]
 
-    # handle time special strings
-    if (tok.match(["midnight", "noon"])):
+    m = re.fullmatch(re_time_certain, tok.val)
+    if m:
         val = parse_time_to_norm(tok.val)
-        if val: return [EToken(val, "TIME", "TIME")]
+        if val:
+            return [EToken(val, "TIME", "TIME")]
+
 
     # date range
     datespec = r"\d{1,2}/\d{1,2}(?:/(?:\d{2}|\d{4}))?" # mm/dd/yy or mm/dd/yyyy
@@ -578,7 +538,7 @@ def collapse_expand_tokens(token_list: list) -> list:
      7) Collapses the two token string "the" (OD) (as in "the 21st")
         into a single token representing this as a date.
 
-     (* - these substitutions handled by parse_for_time_date_range)
+     (* - these substitutions handled by parse_time_date_range)
 
     """
     t = padded(token_list, 10)
@@ -594,7 +554,7 @@ def collapse_expand_tokens(token_list: list) -> list:
         return [t[0]]
 
     # time/date range
-    res = parse_for_time_date_range(t[0], t[1])
+    res = parse_time_date_range(t[0], t[1])
     if res: return res
 
     # handle to/until etc
