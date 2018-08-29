@@ -96,6 +96,10 @@ def in_x_months(mons: int, anchor: date = today) -> date:
 #   event name
 #   event location
     
+# If there is only one date, it is assumed to be both the start and
+# end date.  Likewise, if no end time is specified, it is assumed to
+# be the same as the start time.
+
 # not yet included:
 #    time zones (such as "at 5 pm EST")
 #    recurring events
