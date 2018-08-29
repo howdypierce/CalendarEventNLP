@@ -225,7 +225,7 @@ testdata = [
 
     ("Family vacation from August 9 - 18 at The Marriott Hotel", 
      next_day(8, 9), next_day(8, 9) + timedelta(days=9), None, None,
-     "Family vacation", "The Mariott Hotel"),
+     "Family vacation", "The Marriott Hotel"),
 
     ("Soccer practice next Wednesday at 6am at JFK High School", 
      map_day("Wednesday"), None, time(6), None, "Soccer practice",
@@ -274,9 +274,9 @@ testdata = [
      map_day("Thursday"), None, time(11), time(13,30), "Lunch with John",
      "Cupertino"),
 
-    ("Lunch with John in Cupertino on Thursday from 11-1:30pm",
-     map_day("Thursday"), None, time(11), time(13,30), "Lunch with John",
-     "Cupertino"),
+    ("Lunch with John Carlucci in Cupertino on Thursday from 11-1:30pm",
+     map_day("Thursday"), None, time(11), time(13,30),
+     "Lunch with John Carlucci", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1:00",
      map_day("Thursday"), None, time(11), time(13), "Lunch with John",
@@ -407,7 +407,7 @@ testdata = [
 
     ("12p to 2p on May 5th, committee meeting at 559 Madison Ave.", 
      next_day(5, 5), None, time(12), time(14), "committee meeting",
-     "559 Madison Ave."),
+     "559 Madison Ave"),
 
     ("23rd of May at 2000, Dinner with Andre", 
      next_day(5, 23), None, time(20), None, "Dinner with Andre", None),
@@ -424,37 +424,37 @@ testdata = [
      date(today.year, 12, 25), None, None, None, "Christmas", None),
 
     ("Homework is due on the eleventh",
-     next_monthday(11), None, None, None, "Homework is due", None),
+     next_monthday(11), None, None, None, "Homework due", None),
 
     ("Homework is due on the 11th",
-     next_monthday(11), None, None, None, "Homework is due", None),
+     next_monthday(11), None, None, None, "Homework due", None),
 
     ("Homework is due on the 1st",
-     next_monthday(1), None, None, None, "Homework is due", None),
+     next_monthday(1), None, None, None, "Homework due", None),
 
     ("Homework is due on June first",
-     next_day(6, 1), None, None, None, "Homework is due", None),
+     next_day(6, 1), None, None, None, "Homework due", None),
 
     ("Homework is due on June first",
-     next_day(6, 1), None, None, None, "Homework is due", None),
+     next_day(6, 1), None, None, None, "Homework due", None),
 
     ("Homework is due on June 1st",
-     next_day(6, 1), None, None, None, "Homework is due", None),
+     next_day(6, 1), None, None, None, "Homework due", None),
      
     ("Homework is due on June 1",
-     next_day(6, 1), None, None, None, "Homework is due", None),
+     next_day(6, 1), None, None, None, "Homework due", None),
 
-    ("Homework 5 due next monday at 3 o'clock at 3 Towne Hall", 
+    ("Homework 5 due next monday at 3 o'clock at 4 Towne Hall", 
      map_day("Monday"), None, time(15), None, "Homework 5 due",
-     "3 Towne Hall"),
+     "4 Towne Hall"),
 
-    ("Homework 5 due next sunday at 3 Towne Hall at 3pm", 
+    ("Homework 5 due next sunday at 4 Towne Hall at 3pm", 
      map_day("Sunday"), None, time(15), None, "Homework 5 due",
-     "3 Towne Hall"),
+     "4 Towne Hall"),
 
-    ("Homework 5 due next monday at 3 Towne Hall at 3", 
+    ("Homework 5 due next monday at 4 Towne Hall at 3", 
      map_day("Monday"), None, time(15), None, "Homework 5 due",
-     "3 Towne Hall"),
+     "4 Towne Hall"),
 
     ("The retreat is from Jan 12 - 29, at The Beach House", 
      next_day(1, 12), next_day(1, 12) + timedelta(days=17), None, None, 
@@ -615,7 +615,7 @@ testdata = [
 
     ("Lunch with Matthew at 600 Main St. at 1:30 Monday", 
      map_day("Monday"), None, time(13, 30), None, "Lunch with Matthew",
-     "123 Main St."),
+     "600 Main St"),
 
     ("Final project due August 15", 
      next_day(8, 15), None, None, None, "Final project due", None),
@@ -701,10 +701,19 @@ testdata = [
     ("Swimming at 4 in the morning", 
      None, None, time(4), None, "Swimming", None), 
 
+    ("Swimming at 4 in the afternoon", 
+     None, None, time(16), None, "Swimming", None), 
+
+    ("Swimming at 4:30 in the afternoon", 
+     None, None, time(16,30), None, "Swimming", None), 
+
     ("Meeting at 9 at night", 
      None, None, time(21), None, "Meeting", None), 
 
     ("Meeting at 9 in the morning", 
+     None, None, time(9), None, "Meeting", None), 
+
+    ("Meeting at 9:00 in the morning", 
      None, None, time(9), None, "Meeting", None), 
 
     ("Training Friday 1100-1200 in the big tent",
@@ -765,15 +774,15 @@ testdata = [
 
     ("At Laguna Beach, CA, United States, surfing lessons tue at 0800AM", 
      map_day("Tuesday"), None, time(8), None, "surfing lessons",
-     "At Laguna Beach, CA, United States"),
+     "Laguna Beach, CA, United States"),
 
     ("Star gazing with Jen at the Custer Observatory, Southold, NY on Saturday from 10-11pm", 
      map_day("Saturday"), None, time(22), time(23), "Star gazing with Jen",
-     "Custer Observatory, Southold, NY"),
+     "the Custer Observatory, Southold, NY"),
 
-    ("WWDC at Moscone West, San Fransisco, CA June 11th to 15th", 
+    ("WWDC at Moscone West, San Francisco, CA June 11th to 15th", 
      next_day(6, 11), next_day(6, 11) + timedelta(days=4), None, None,
-     "WWDC", "Moscone West"),
+     "WWDC", "Moscone West, San Francisco, CA"),
 
     ("dec 1 at 3pm - 11", 
      next_day(12, 1), None, time(15), time(23), None, None),
@@ -783,7 +792,7 @@ testdata = [
      None, None),
 
     ("Lunch with becca at cafe thu 1-2", 
-     map_day("Thursday"), None, time(13), time(14), "Lunch with becca", None),
+     map_day("Thursday"), None, time(13), time(14), "Lunch with becca", "cafe"),
 
     ("lunch with John at \"Taco Tuesdays\" Friday 12 pm", 
      map_day("Friday"), None, time(12), None, "lunch with John",
@@ -812,7 +821,7 @@ testdata = [
      today, None, in_x_min(150), None, "Running w/ Pat", None),
 
     ("Running with Pat 2:15 - 3 pm tomorrow", 
-     tomorrow, None, time(14, 15), time(15), "Running w/ Pat", None),
+     tomorrow, None, time(14, 15), time(15), "Running with Pat", None),
 
     ("National Conference 9/23 - 9/26 in Atlanta", 
      next_day(9, 23), next_day(9, 23) + timedelta(days=3), None, None,
@@ -911,6 +920,10 @@ testdata = [
 
     ("Discuss project plan Wednesday 8:00-10:00 a.m.",
      map_day("Wednesday"), None, time(8), time(10), "Discuss project plan",
+     None),
+     
+    ("Discuss project plan Wednesday 8:00-10:00 p.m.",
+     map_day("Wednesday"), None, time(20), time(22), "Discuss project plan",
      None),
      
     ("Discuss project plan Wednesday 8:00:00-10:00:00",
@@ -1139,7 +1152,7 @@ testdata = [
      today+timedelta(days=14), None, None, None, "My vacation", None),
      
     ("My vacation starts in a month",
-     in_x_months(1), None, None, None, "My vacation", None),
+     in_x_months(1), None, None, None, "My vacation starts", None),
 
     ("Dinner at TGI Friday on tue at 7 to 8:30",
      map_day("Tuesday"), None, time(19), time(20,30), "Dinner", "TGI Friday"),
@@ -1147,14 +1160,14 @@ testdata = [
     ("Meet at Ruby Tuesday on Weds at noon",
      map_day("Wednesday"), None, time(12), None, "Meet", "Ruby Tuesday"),
 
-    ("Mimosa's at Vasu's in two days at 6p",
-     today + timedelta(days=2), None, time(18), None, "Mimosa's", "Vasu's"),
+    ("mimosas at Vasu's in two days at 6p",
+     today + timedelta(days=2), None, time(18), None, "mimosas", "Vasu's"),
 
-    ("Mimosa's at Vasu's in 3 d at 6p",
-     today + timedelta(days=3), None, time(18), None, "Mimosa's", "Vasu's"),
+    ("mimosas at Vasu's in 3 d at 6p",
+     today + timedelta(days=3), None, time(18), None, "mimosas", "Vasu's"),
 
-    ("Mimosa's at Vasu's in a day at 6p",
-     tomorrow, None, time(18), None, "Mimosa's", "Vasu's")
+    ("mimosas at Vasu's in a day at 6p",
+     tomorrow, None, time(18), None, "mimosas", "Vasu's")
 ]
      
 for t in testdata:
