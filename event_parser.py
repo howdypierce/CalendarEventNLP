@@ -7,6 +7,8 @@ from dateutil import relativedelta
 from etoken import *
 from spelled_numbers import handle_spelled_number
 
+logfile = "/Users/howdy/Code/Event NLP/queries.log"
+
 meridian_txt = ["a", "am", "a.m.", "a.m", "p", "pm", "p.m.", "p.m"]
 day_txt = ["day", "days", "d"]
 week_txt = ["week", "weeks", "wk"]
@@ -930,7 +932,7 @@ def compute_dates_and_times(d: dict) -> tuple:
     return (st_date, end_date, st_time, end_time)
 
 
-def parse(raw: str, debug: bool = False):
+def parse(raw: str, debug: bool = False, log: bool = False):
     """Parse a natural language string to a calendar event.
 
     Returns (start_date, end_date, start_time, end_time, title,
@@ -965,12 +967,20 @@ def parse(raw: str, debug: bool = False):
     If debug is True, then debugging information will be printed to
     stdout.
 
+    if log is True, then the original raw query will be saved as a
+    single line to the log file (for later use as a test case)
+
     Currently, the parser does not handle timezones or recurring
     events.
+
     """
 
     if (debug):
         print(f"parsing raw phrase: {raw}")
+
+    if (log):
+        with open(logfile, 'a') as f:
+            f.write(f"{raw}\n")
 
     # tokenize our input
     tokenized = nltk.word_tokenize(raw)
