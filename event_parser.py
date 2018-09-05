@@ -579,15 +579,26 @@ def norm_to_date(t: EToken, hint_date: date = today) -> date:
         return trial_date
 
 
-def norm_to_time(t: EToken, hint: time = None) -> time:
+def norm_to_time(t: EToken,
+                 hint: time = None,
+                 relation: str = "after") -> time:
     """Convert a token containing a normalized time into the corresponding
     datetime.time.
 
     hint (default: noon) is a target time. If the token is a reltime,
     its am/pm will be interpreted so as to get as close as possible to
     hint.
+
+    relation is one of "after" (the default), "before", or
+    "nearest". If the token is a reltime, then relation determines how
+    the hint is interpreted. In the following examples, assume t is
+    "reltime:11:00:00" and hint is 3:00 pm: 
+       "after" -> returns 11:00 pm 
+       "before" -> returns 11:00 am
+       "nearest" -> returns 11:00 am
     """
-    assert(t.pos == "TIME")
+    assert t.pos == "TIME"
+    assert relation in ["after", "before", "nearest"], relation
     m = re.fullmatch(r"(abs|rel)time:(\d{2}):(\d{2}):(\d{2})", t.val)
     if not m:
         assert False, t
@@ -598,11 +609,19 @@ def norm_to_time(t: EToken, hint: time = None) -> time:
     minute = int(m.group(3))
     second = int(m.group(4))
     
+    # TODO: should also handle the case of wrapping aorund midnight,
+    # but this requires modifying the end or start date, as well
+
     if m.group(1) == "rel":
         assert 1 <= hour <= 12, t
-        am_dist = abs(hour - hint.hour)
-        pm_dist = abs(12 + hour - hint.hour)
-        if pm_dist < am_dist: hour += 12
+        if relation == "nearest":
+            am_dist = abs(hour - hint.hour)
+            pm_dist = abs(12 + hour - hint.hour)
+            if pm_dist < am_dist: hour += 12
+        elif relation == "after":
+            if hour < hint.hour: hour += 12
+        elif relation == "before":
+            if hour + 12 < hint.hour: hour += 12
 
     return time(hour, minute, second)
 
@@ -833,7 +852,7 @@ def clean_punctuation(s: str) -> str:
 
     - Remove a leading space ahead of comma, period, !, apostrophe
     - remove a leading comma or period
-    - remove a trailing comma or period
+    - remove a trailing comma or period or !
     - turn `` and '' into double quotes
 
     Return the cleaned-up string
@@ -842,7 +861,7 @@ def clean_punctuation(s: str) -> str:
     s = re.sub(" `` ", " \"", s)
     s = re.sub("''", "\"", s)
     s = re.sub("^[,.] ", "", s)
-    s = re.sub("[,.]$", "", s)
+    s = re.sub("[,.!]$", "", s)
     return s
 
 
@@ -881,6 +900,8 @@ def compute_dates_and_times(d: dict) -> tuple:
 
     if "END_DATE" in d:
         end_date = norm_to_date(d["END_DATE"][0], st_date)
+    elif st_date is not None:
+        end_date = st_date
 
     if "ST_TIME" in d:
         # If the end time is absolute and the start time is relative,
@@ -889,14 +910,14 @@ def compute_dates_and_times(d: dict) -> tuple:
         if (d["ST_TIME"][0].val.startswith("reltime:") and "END_TIME" in d and
             d["END_TIME"][0].val.startswith("abstime:")):
             end_time = norm_to_time(d["END_TIME"][0])
-            st_time = norm_to_time(d["ST_TIME"][0], end_time)
+            st_time = norm_to_time(d["ST_TIME"][0], end_time, "before")
         else:
             if "TITLE" in d:
                 default_time = find_default_time_for_event(d["TITLE"])
-            st_time = norm_to_time(d["ST_TIME"][0], default_time)
+            st_time = norm_to_time(d["ST_TIME"][0], default_time, "nearest")
 
     if "END_TIME" in d and end_time is None:
-        end_time = norm_to_time(d["END_TIME"][0], st_time)
+        end_time = norm_to_time(d["END_TIME"][0], st_time, "after")
         
     if st_time is not None and end_time is None and "DURATION" in d:
         anchor = today
@@ -909,10 +930,43 @@ def compute_dates_and_times(d: dict) -> tuple:
     return (st_date, end_date, st_time, end_time)
 
 
-def parse(raw, debug = False):
-    """Parse the raw string.
+def parse(raw: str, debug: bool = False):
+    """Parse a natural language string to a calendar event.
 
-    Returns tuple (start date, end date, start time, end time, title, location)
+    Returns (start_date, end_date, start_time, end_time, title,
+    location) as a tuple.
+
+    start_date
+       The datetime.date of the start of the event, or None if no
+       start date could be determined from the input.
+
+    end_date
+       The datetime.date of the end of the event, or None if no end
+       date could be determined from the input. If only one date is
+       specified in the input, then start_date and end_date will be
+       the same value.
+
+    start_time
+       The datetime.time of the start of the event, or None if no
+       start time could be determined from the input.
+
+    end_time
+       The datetime.time of the end of the event, or None if no end
+       time could be determined from the input. Note, if the input has
+       only one time in it, then start_time will have a value and
+       end_time will be None.
+
+    title
+       The title of the event.
+
+    location
+       The location of the event.
+
+    If debug is True, then debugging information will be printed to
+    stdout.
+
+    Currently, the parser does not handle timezones or recurring
+    events.
     """
 
     if (debug):
@@ -983,5 +1037,3 @@ def parse(raw, debug = False):
         print(f"Returning: {ret}")
 
     return ret
-
-

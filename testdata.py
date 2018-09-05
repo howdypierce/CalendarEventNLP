@@ -87,7 +87,9 @@ def in_x_months(mons: int, anchor: date = today) -> date:
     return anchor + relativedelta.relativedelta(months=mons)
 
 
-# From here down is a list of test data. Each item is a tuple with the following values:
+# From here down is a list of test data. Each item is a tuple with the
+# following values:
+
 #   the test string
 #   start day, as a date object, or None
 #   end day, as a date object, or None
@@ -97,8 +99,7 @@ def in_x_months(mons: int, anchor: date = today) -> date:
 #   event location
     
 # If there is only one date, it is assumed to be both the start and
-# end date.  Likewise, if no end time is specified, it is assumed to
-# be the same as the start time.
+# end date.  If no end time is specified, the end_time value will be None.
 
 # not yet included:
 #    time zones (such as "at 5 pm EST")
@@ -106,90 +107,106 @@ def in_x_months(mons: int, anchor: date = today) -> date:
 
 testdata = [
     ("Friday breakfast at 8 at Lucky's",
-     map_day("Friday"), None, time(8), None, "breakfast", "Lucky's"),
+     map_day("Friday"), map_day("Friday"), time(8), None, "breakfast",
+     "Lucky's"),
 
     ("Thursday 7 am Ride with Arn at Amante",
-     map_day("Thursday"), None, time(7), None, "Ride with Arn", "Amante"),
+     map_day("Thursday"), map_day("Thursday"), time(7), None, "Ride with Arn",
+     "Amante"),
+
+    ("Meet Bill at Starbucks next Tuesday from 11 to noon",
+     map_day("Tuesday"), map_day("Tuesday"), time(11), time(12), "Meet Bill",
+     "Starbucks"),
 
     ("Let's meet at Twisted Pine at 5 pm to catch up",
-     None, None, time(17), None, "catch up", "Twisted Pine"),
+     None, None, time(17), None, "Let's meet to catch up", "Twisted Pine"),
 
     ("Let's grab coffee at 9:30 am on Wednesday",
-     map_day("Wednesday"), None, time(9, 30), None, "coffee", None),
+     map_day("Wednesday"), map_day("Wednesday"), time(9, 30), None,
+     "Let's grab coffee", None),
 
     ("Run today at 1:30",
-     today, None, time(13, 30), None, "Run", None),
+     today, today, time(13, 30), None, "Run", None),
 
     ("Dave and I have a meeting to go down to the AF Academy on July 12th",
-     next_day(7, 12), None, None, None, "Dave and I have a meeting to go down",
-     "AF Academy"),
+     next_day(7, 12), next_day(7, 12), None, None,
+     "Dave and I have a meeting to go down", "AF Academy"),
 
     ("Cycling with Arn and Karen on Thursday at 7:15 AM at Amante",
-     map_day("Thursday"), None, time(7,15), None, "Cycling with Arn and Karen",
-     "Amante"),
+     map_day("Thursday"), map_day("Thursday"), time(7,15), None,
+     "Cycling with Arn and Karen", "Amante"),
 
     ("Meet at your house at 6 am",
      None, None, time(6), None, "Meet", "your house"),
 
     ("Meet thurs 8-10 am",
-     map_day("Thursday"), None, time(8), time(10), "Meet", None),
+     map_day("Thursday"), map_day("Thursday"), time(8), time(10), "Meet",
+     None),
 
     ("DL 1257 Jun 21 2019 6am - 7am",
-     date(2019, 6, 21), None, time(6), time(7), "DL 1257", None),
+     date(2019, 6, 21), date(2019, 6, 21), time(6), time(7), "DL 1257", None),
 
     ("DL 1257 Jun 21 6am - 7am",
-     next_day(6, 21), None, time(6), time(7), "DL 1257", None),
+     next_day(6, 21), next_day(6, 21), time(6), time(7), "DL 1257", None),
 
     ("Saturday 6 pm to 8 pm Oceans 8 at Cinemark ",
-     map_day("Saturday"), None, time(18), time(20), "Oceans 8", "Cinemark"),
+     map_day("Saturday"), map_day("Saturday"), time(18), time(20), "Oceans 8",
+     "Cinemark"),
 
     ("Saturday, 6 pm to 8 pm Oceans 8 at Cinemark ",
-     map_day("Saturday"), None, time(18), time(20), "Oceans 8", "Cinemark"),
+     map_day("Saturday"), map_day("Saturday"), time(18), time(20), "Oceans 8",
+     "Cinemark"),
 
     ("Sunday 9:30 to noon Genny ride at Rayback Collective",
-     map_day("Sunday"), None, time(9,30), time(12), "Genny ride",
+     map_day("Sunday"), map_day("Sunday"), time(9,30), time(12), "Genny ride",
      "Rayback Collective"),
 
     ("Grocery shopping at King Kullen Thursday at 11:30pm",
-     map_day("Thursday"), None, time(23, 30), None, "Grocery shopping",
-     "King Kullen"),
+     map_day("Thursday"), map_day("Thursday"), time(23, 30), None,
+     "Grocery shopping", "King Kullen"),
 
     ("Grocery shopping at Waldbaums from 4pm to 5pm", 
      None, None, time(16), time(17), "Grocery shopping",
      "Waldbaums"),
 
     ("Meet at Room 321 Thursday at 10:00 am",
-     map_day("Thursday"), None, time(10), None, "Meet", "Room 321"),
+     map_day("Thursday"), map_day("Thursday"), time(10), None, "Meet",
+     "Room 321"),
 
     ("Meet at Room 321 Thursday at 10 am",
-     map_day("Thursday"), None, time(10), None, "Meet", "Room 321"),
+     map_day("Thursday"), map_day("Thursday"), time(10), None, "Meet",
+     "Room 321"),
 
     ("Meet at Room 321 Thursday at 10",
-     map_day("Thursday"), None, time(10), None, "Meet", "Room 321"),
+     map_day("Thursday"), map_day("Thursday"), time(10), None, "Meet",
+     "Room 321"),
 
     ("Meet at Room 321 Thursday at 10 o'clock",
-     map_day("Thursday"), None, time(10), None, "Meet", "Room 321"),
+     map_day("Thursday"), map_day("Thursday"), time(10), None, "Meet",
+     "Room 321"),
      
     ("Meet at Room 321 Thursday at 10o'clock",
-     map_day("Thursday"), None, time(10), None, "Meet", "Room 321"),
+     map_day("Thursday"), map_day("Thursday"), time(10), None, "Meet",
+     "Room 321"),
      
     ("Meet at Room Three Thursday at ten",
-     map_day("Thursday"), None, time(10), None, "Meet", "Room Three"),
+     map_day("Thursday"), map_day("Thursday"), time(10), None, "Meet",
+     "Room Three"),
 
     ("Clothes shopping Wednesday at 5:35pm at Nordstroms", 
-     map_day("Wednesday"), None, time(17, 35), None, "Clothes shopping",
-     "Nordstroms"),
+     map_day("Wednesday"), map_day("Wednesday"), time(17, 35), None,
+     "Clothes shopping", "Nordstroms"),
 
     ("Clothes shopping at Nordstroms next Thursday at 5p", 
-     map_day("Thursday"), None, time(17), None, "Clothes shopping",
-     "Nordstroms"),
+     map_day("Thursday"), map_day("Thursday"), time(17), None,
+     "Clothes shopping", "Nordstroms"),
 
     ("Clothes shopping at Nordstroms tomorrow at 0600", 
-     tomorrow, None, time(6), None, "Clothes shopping",
+     tomorrow, tomorrow, time(6), None, "Clothes shopping",
      "Nordstroms"),
 
     ("Clothes shopping at Nordstroms tomorrow at 1200", 
-     tomorrow, None, time(12), None, "Clothes shopping",
+     tomorrow, tomorrow, time(12), None, "Clothes shopping",
      "Nordstroms"),
 
     ("Clothes shopping at Nordstroms thursday to saturday", 
@@ -197,18 +214,19 @@ testdata = [
      "Clothes shopping", "Nordstroms"),
 
     ("Clothes shopping at Nordstroms 23 sep at 2:00", 
-     next_day(9, 23), None, time(14), None, "Clothes shopping", "Nordstroms"),
+     next_day(9, 23), next_day(9, 23), time(14), None, "Clothes shopping",
+     "Nordstroms"),
 
     ("Clothes shopping at Nordstroms 23 Apr at 2", 
-     next_day(4, 23), None, time(14), None, "Clothes shopping",
+     next_day(4, 23), next_day(4, 23), time(14), None, "Clothes shopping",
      "Nordstroms"),
 
     ("Clothes shopping at Nordstroms 23 sep at noon", 
-     next_day(9, 23), None, time(12), None, "Clothes shopping",
+     next_day(9, 23), next_day(9, 23), time(12), None, "Clothes shopping",
      "Nordstroms"),
 
     ("Clothes shopping at Nordstroms 23 sep at midnight", 
-     next_day(9, 23), None, time(0), None, "Clothes shopping",
+     next_day(9, 23), next_day(9, 23), time(0), None, "Clothes shopping",
      "Nordstroms"),
 
     ("Family vacation from 8/9 - 8/18", 
@@ -232,192 +250,196 @@ testdata = [
      "Family vacation", "The Marriott Hotel"),
 
     ("Soccer practice next Wednesday at 6am at JFK High School", 
-     map_day("Wednesday"), None, time(6), None, "Soccer practice",
-     "JFK High School"),
+     map_day("Wednesday"), map_day("Wednesday"), time(6), None,
+     "Soccer practice", "JFK High School"),
 
     ("Soccer practice tomorrow at 6 at JFK High School", 
-     tomorrow, None, time(6), None, "Soccer practice",
+     tomorrow, tomorrow, time(6), None, "Soccer practice",
      "JFK High School"),
 
     ("Sam's birthday on 5/16", 
-     next_day(5, 16), None, None, None, "Sam's birthday", None),
+     next_day(5, 16), next_day(5, 16), None, None, "Sam's birthday", None),
 
     ("Meet at Howdy's office Thursday at 5:00 am",
-     map_day("Thursday"), None, time(5), None, "Meet", "Howdy's office"),
+     map_day("Thursday"), map_day("Thursday"), time(5), None, "Meet",
+     "Howdy's office"),
 
     ("Bike ride 6/20 at 5am",
-     next_day(6, 20), None, time(5), None, "Bike ride", None),
+     next_day(6, 20), next_day(6, 20), time(5), None, "Bike ride", None),
 
     ("Bike ride 6/20/18 at 5am",
-     date(2018, 6, 20), None, time(5), None, "Bike ride", None),
+     date(2018, 6, 20), date(2018, 6, 20), time(5), None, "Bike ride", None),
 
     ("Bike ride 6/20/2018 at 5am",
-     date(2018, 6, 20), None, time(5), None, "Bike ride", None),
+     date(2018, 6, 20), date(2018, 6, 20), time(5), None, "Bike ride", None),
 
     ("Bike ride 6-20 at 5am",
-     next_day(6, 20), None, time(5), None, "Bike ride", None),
+     next_day(6, 20), next_day(6, 20), time(5), None, "Bike ride", None),
 
     ("Bike ride 6-20-18 at 5am",
-     date(2018, 6, 20), None, time(5), None, "Bike ride", None),
+     date(2018, 6, 20), date(2018, 6, 20), time(5), None, "Bike ride", None),
 
     ("Bike ride 6-20-2018 at noon",
-     date(2018, 6, 20), None, time(12), None, "Bike ride", None),
+     date(2018, 6, 20), date(2018, 6, 20), time(12), None, "Bike ride", None),
 
     ("Lunch with John in Cupertino on Thursday from 11-1:30pm", 
-     map_day("Thursday"), None, time(11), time(13, 30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13, 30),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1:30 pm", 
-     map_day("Thursday"), None, time(11), time(13, 30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13, 30),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Friday @12", 
-     map_day("Friday"), None, time(12), None, "Lunch with John", "Cupertino"),
-
-    ("Lunch with John in Cupertino on Thursday from 11-1:30",
-     map_day("Thursday"), None, time(11), time(13,30), "Lunch with John",
+     map_day("Friday"), map_day("Friday"), time(12), None, "Lunch with John",
      "Cupertino"),
 
+    ("Lunch with John in Cupertino on Thursday from 11-1:30",
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13,30),
+     "Lunch with John", "Cupertino"),
+
     ("Lunch with John Carlucci in Cupertino on Thursday from 11-1:30pm",
-     map_day("Thursday"), None, time(11), time(13,30),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13,30),
      "Lunch with John Carlucci", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1:00",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1:00pm",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1p",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1pm",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11-1A",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday From 11-1am",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11:15-1:30",
-     map_day("Thursday"), None, time(11,15), time(13,30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11,15), time(13,30),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11:15-1:30pm",
-     map_day("Thursday"), None, time(11,15), time(13,30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11,15), time(13,30),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11:15-1:00",
-     map_day("Thursday"), None, time(11,15), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11,15), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11:15-1:00pm",
-     map_day("Thursday"), None, time(11,15), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11,15), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11:15-1",
-     map_day("Thursday"), None, time(11, 15), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11, 15), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11:15-1p",
-     map_day("Thursday"), None, time(11, 15), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11, 15), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11:15-1pm",
-     map_day("Thursday"), None, time(11, 15), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11, 15), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11:15-1A",
-     map_day("Thursday"), None, time(11, 15), time(1), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11, 15), time(1),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday From 11:15-1am",
-     map_day("Thursday"), None, time(11, 15), time(1), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11, 15), time(1),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11a-1:30",
-     map_day("Thursday"), None, time(11), time(13,30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13,30),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11a-1:30pm",
-     map_day("Thursday"), None, time(11), time(13,30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13,30),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11a-1:00",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11a-1:00pm",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11pm-1",
-     map_day("Thursday"), None, time(23), time(1), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday") + timedelta(days=1), time(23),
+     time(1), "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11p-1p",
-     map_day("Thursday"), None, time(23), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(23), time(13),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11a-1pm",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11am-1A",
-     map_day("Thursday"), None, time(11), time(1), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday") + timedelta(days=1), time(11),
+     time(1), "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday From 11a-1am",
-     map_day("Thursday"), None, time(11), time(1), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday") + timedelta(days=1), time(11),
+     time(1), "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11- 1:30pm",
-     map_day("Thursday"), None, time(11), time(13,30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13,30),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11 -1",
-     map_day("Thursday"), None, time(11), time(13), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13),
+     "Lunch with John", "Cupertino"),
     
     ("Lunch with John in Cupertino on Thursday from 11 - 1:30pm",
-     map_day("Thursday"), None, time(11), time(13,30), "Lunch with John",
-     "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(11), time(13,30),
+     "Lunch with John", "Cupertino"),
 
     ("Lunch with John in Cupertino on Thursday from 11pm",
-     map_day("Thursday"), None, time(23), None, "Lunch with John", "Cupertino"),
+     map_day("Thursday"), map_day("Thursday"), time(23), None,
+     "Lunch with John", "Cupertino"),
 
     ("12p to 2p on May 5th, committee meeting", 
-     next_day(5, 5), None, time(12), time(14), "committee meeting",
+     next_day(5, 5), next_day(5, 5), time(12), time(14), "committee meeting",
      None),
 
     ("12p to 2p on 15th of may, committee meeting", 
-     next_day(5, 15), None, time(12), time(14), "committee meeting",
+     next_day(5, 15), next_day(5, 15), time(12), time(14), "committee meeting",
      None),
 
     ("12p to 2p on 15th of may, 2020 committee meeting", 
-     date(2020, 5, 15), None, time(12), time(14), "committee meeting",
-     None),
+     date(2020, 5, 15), date(2020, 5, 15), time(12), time(14),
+     "committee meeting", None),
 
     ("12p to 2p on May 5th, committee meeting at 559 Madison Ave.", 
-     next_day(5, 5), None, time(12), time(14), "committee meeting",
+     next_day(5, 5), next_day(5, 5), time(12), time(14), "committee meeting",
      "559 Madison Ave"),
 
-    ("23rd of May at 2000, Dinner with Andre", 
-     next_day(5, 23), None, time(20), None, "Dinner with Andre", None),
+    ("23rd of May at 2000 Elm St, Dinner with Andre", 
+     next_day(5, 23), next_day(5, 23), time(20), None, "Dinner with Andre",
+     "2000 Elm St"),
 
     ("November 23rd at 8:00p, Dinner with Andre at Toku", 
-     next_day(11, 23), None, time(20), None, "Dinner with Andre",
+     next_day(11, 23), next_day(11, 23), time(20), None, "Dinner with Andre",
      "Toku"),
 
     ("January 24 at 3pm - 4:40pm Feb 3,  Retreat at Hilton Hotel", 
@@ -425,140 +447,150 @@ testdata = [
      time(16, 40), "Retreat", "Hilton Hotel"),
 
     ("Christmas is on December 25th.", 
-     date(today.year, 12, 25), None, None, None, "Christmas", None),
+     next_day(12, 25), next_day(12, 25), None, None, "Christmas", None),
 
     ("Homework is due on the eleventh",
-     next_monthday(11), None, None, None, "Homework due", None),
+     next_monthday(11), next_monthday(11), None, None, "Homework due", None),
 
     ("Homework is due on the 11th",
-     next_monthday(11), None, None, None, "Homework due", None),
+     next_monthday(11), next_monthday(11), None, None, "Homework due", None),
 
     ("Homework is due on the 1st",
-     next_monthday(1), None, None, None, "Homework due", None),
+     next_monthday(1), next_monthday(1), None, None, "Homework due", None),
 
     ("Homework is due on June first",
-     next_day(6, 1), None, None, None, "Homework due", None),
-
-    ("Homework is due on June first",
-     next_day(6, 1), None, None, None, "Homework due", None),
+     next_day(6, 1), next_day(6, 1), None, None, "Homework due", None),
 
     ("Homework is due on June 1st",
-     next_day(6, 1), None, None, None, "Homework due", None),
+     next_day(6, 1), next_day(6, 1), None, None, "Homework due", None),
      
     ("Homework is due on June 1",
-     next_day(6, 1), None, None, None, "Homework due", None),
+     next_day(6, 1), next_day(6, 1), None, None, "Homework due", None),
 
     ("Homework 5 due next monday at 3 o'clock at 4 Towne Hall", 
-     map_day("Monday"), None, time(15), None, "Homework 5 due",
+     map_day("Monday"), map_day("Monday"), time(15), None, "Homework 5 due",
      "4 Towne Hall"),
 
     ("Homework 5 due next sunday at 4 Towne Hall at 3pm", 
-     map_day("Sunday"), None, time(15), None, "Homework 5 due",
+     map_day("Sunday"), map_day("Sunday"), time(15), None, "Homework 5 due",
      "4 Towne Hall"),
 
     ("Homework 5 due next monday at 4 Towne Hall at 3", 
-     map_day("Monday"), None, time(15), None, "Homework 5 due",
+     map_day("Monday"), map_day("Monday"), time(15), None, "Homework 5 due",
      "4 Towne Hall"),
 
     ("The retreat is from Jan 12 - 29, at The Beach House", 
      next_day(1, 12), next_day(1, 12) + timedelta(days=17), None, None, 
-     "retreat", "The Beach House"),
+     "The retreat", "The Beach House"),
 
     ("Bake a cake tomorrow.", 
-     tomorrow, None, None, None, "Bake a cake", None),
+     tomorrow, tomorrow, None, None, "Bake a cake", None),
 
     ("Use Horizon today!", 
-     today, None, None, None, "Use Horizon", None),
+     today, today, None, None, "Use Horizon", None),
 
     ("At arena 2:00pm Football Game", 
      None, None, time(14), None, "Football Game", "arena"),
 
     ("Staff meeting on Monday at 9 am in the conference room", 
-     map_day("Monday"), None, time(9), None, "Staff meeting",
+     map_day("Monday"), map_day("Monday"), time(9), None, "Staff meeting",
      "the conference room"),
 
     ("Project meeting with Jason 4 pm tomorrow at coffee shop", 
-     tomorrow, None, time(16), None, "Project meeting with Jason",
+     tomorrow, tomorrow, time(16), None, "Project meeting with Jason",
      "coffee shop"),
 
     ("Let's have lunch at Joe's on the 3rd.", 
-     next_monthday(3), None, None, None, "lunch", "Joe's"),
+     next_monthday(3), next_monthday(3), None, None, "Let's have lunch",
+     "Joe's"),
 
     ("Let's have lunch at Joe's on the 29th.", 
-     next_monthday(29), None, None, None, "lunch", "Joe's"),
+     next_monthday(29), next_monthday(29), None, None, "Let's have lunch",
+     "Joe's"),
 
     ("Boys ski trip at Victor's from the 3rd to the 6th", 
      next_monthday(3), next_monthday(6), None, None, "Boys ski trip",
      "Victor's"),
 
     ("The exam is in a week", 
-     today + timedelta(days=7), None, None, None, "The exam", None),
+     today + timedelta(days=7), today + timedelta(days=7), None, None,
+     "The exam", None),
 
     ("The exam is a week from Friday", 
-     map_day("Friday") + timedelta(days=7), None, None, None, "The exam",
-     None),
+     map_day("Friday") + timedelta(days=7),
+     map_day("Friday") + timedelta(days=7), None, None, "The exam", None),
 
     ("The exam is in 2 weeks", 
-     today + timedelta(days=14), None, None, None, "The exam", None),
+     today + timedelta(days=14), today + timedelta(days=14), None, None,
+     "The exam", None),
 
     ("The exam is in 3 weeks from tomorrow.", 
-     today + timedelta(days=22), None, None, None, "The exam", None),
+     today + timedelta(days=22), today + timedelta(days=22), None, None,
+     "The exam", None),
 
     ("The exam is three weeks from tomorrow.", 
-     today + timedelta(days=22), None, None, None, "The exam", None),
+     today + timedelta(days=22), today + timedelta(days=22), None, None,
+     "The exam", None),
 
     ("The exam is a week from yesterday", 
-     today + timedelta(days=6), None, None, None, "The exam", None),
+     today + timedelta(days=6), today + timedelta(days=6), None, None,
+     "The exam", None),
 
     ("The exam is Wednesday @ 2pm and lasts for five hours", 
-     map_day("Wednesday"), None, time(14), time(19), "The exam", None),
+     map_day("Wednesday"), map_day("Wednesday"), time(14), time(19),
+     "The exam", None),
 
     ("The operation is in a month", 
-     in_x_months(1), None, None, None, "The operation", None),
+     in_x_months(1), in_x_months(1), None, None, "The operation", None),
 
     ("The operation is a month from Friday", 
-     in_x_months(1, map_day("Friday")), None, None, None, "The operation",
-     None),
+     in_x_months(1, map_day("Friday")), in_x_months(1, map_day("Friday")),
+     None, None, "The operation", None),
 
     ("The operation is in 2 months", 
-     in_x_months(2), None, None, None, "The operation", None),
+     in_x_months(2), in_x_months(2), None, None, "The operation", None),
 
     ("The operation is 3 months from tomorrow.", 
-     in_x_months(3, tomorrow), None, None, None, "The operation", None),
+     in_x_months(3, tomorrow), in_x_months(3, tomorrow), None, None,
+     "The operation", None),
 
     ("The operation is in three months from tomorrow.", 
-     in_x_months(3, tomorrow), None, None, None, "The operation", None),
+     in_x_months(3, tomorrow), in_x_months(3, tomorrow), None, None,
+     "The operation", None),
 
     ("The operation is a month from yesterday", 
-     in_x_months(1, yesterday), None, None, None, "The operation", None),
+     in_x_months(1, yesterday), in_x_months(1, yesterday), None, None,
+     "The operation", None),
 
     ("The koala will be set free on the fourth of july @noon", 
-     next_day(7, 4), None, time(12), None, "The koala will be set free", None),
+     next_day(7, 4), next_day(7, 4), time(12), None,
+     "The koala will be set free", None),
 
     ("My mom's birthday is on the 27th", 
-     next_monthday(27), None, None, None, "My mom's birthday", None),
+     next_monthday(27), next_monthday(27), None, None, "My mom's birthday",
+     None),
 
     ("The biology exam is @ 8a and goes until 11", 
      None, None, time(8), time(11), "The biology exam", None),
 
     ("Meet Bill on the 5th at City Hall",
-     next_monthday(5), None, None, None, "Meet Bill", "City Hall"),
+     next_monthday(5), next_monthday(5), None, None, "Meet Bill", "City Hall"),
 
     ("The conference is on Feb 12 at 3pm", 
-     next_day(2, 12), None, time(15), None, "The conference", None),
+     next_day(2, 12), next_day(2, 12), time(15), None, "The conference", None),
 
     ("Birthday party from midnight to noon on March fourth", 
-     next_day(3, 4), None, time(0), time(12), "Birthday party", None),
+     next_day(3, 4), next_day(3, 4), time(0), time(12), "Birthday party", None),
 
     ("Birthday party from midnight to noon on the fourth of March", 
-     next_day(3, 4), None, time(0), time(12), "Birthday party", None),
+     next_day(3, 4), next_day(3, 4), time(0), time(12), "Birthday party", None),
 
     ("High school admission results in 1 week", 
-     today + timedelta(days=7), None, None, None,
+     today + timedelta(days=7), today + timedelta(days=7), None, None,
      "High school admission results", None),
 
     ("Lunch with John at 123 Main Street on Tuesday", 
-     map_day("Tuesday"), None, None, None, "Lunch with John",
+     map_day("Tuesday"), map_day("Tuesday"), None, None, "Lunch with John",
      "123 Main Street"),
 
     ("Dinner at 6", 
@@ -580,13 +612,14 @@ testdata = [
      None, None, time(8,15), None, "Breakfast", None),
 
     ("Pick up Joe tomorrow at LAX at 8pm", 
-     tomorrow, None, time(20), None, "Pick up Joe", "LAX"),
+     tomorrow, tomorrow, time(20), None, "Pick up Joe", "LAX"),
 
     ("Pick up Joe the day after tomorrow at LAX at 8pm", 
-     tomorrow + timedelta(days=1), None, time(20), None, "Pick up Joe", "LAX"),
+     tomorrow + timedelta(days=1), tomorrow + timedelta(days=1), time(20),
+     None, "Pick up Joe", "LAX"),
 
     ("Go home the day after July 4", 
-     next_day(7,5), None, None, None, "Go home", None),
+     next_day(7,5), next_day(7,5), None, None, "Go home", None),
 
     ("Cycling class @6 for 1.5h", 
      None, None, time(6), time(7, 30), "Cycling class", None),
@@ -601,7 +634,8 @@ testdata = [
      None, None, time(6), time(8), "Cycling class", None),
 
     ("Next Tuesday Jogging in the Park @8a for 90 min", 
-     map_day("Tuesday"), None, time(8), time(9, 30), "Jogging", "the Park"),
+     map_day("Tuesday"), map_day("Tuesday"), time(8), time(9, 30), "Jogging",
+     "the Park"),
 
     ("Trip to Turkey first of july through 5th of aug", 
      next_day(7, 1), next_day(7, 1) + timedelta(days=35), None, None,
@@ -612,49 +646,53 @@ testdata = [
      "Trip to Turkey", None),
 
     ("Party Tuesday at Rob's House, 7-11p", 
-     map_day("Tuesday"), None, time(19), time(23), "Party", "Rob's House"),
+     map_day("Tuesday"), map_day("Tuesday"), time(19), time(23), "Party",
+     "Rob's House"),
 
     ("Party Tuesday at Rob's House, 7-11", 
-     map_day("Tuesday"), None, time(19), time(23), "Party", "Rob's House"),
+     map_day("Tuesday"), map_day("Tuesday"), time(19), time(23), "Party",
+     "Rob's House"),
 
     ("Lunch with Matthew at 600 Main St. at 1:30 Monday", 
-     map_day("Monday"), None, time(13, 30), None, "Lunch with Matthew",
-     "600 Main St"),
+     map_day("Monday"), map_day("Monday"), time(13, 30), None,
+     "Lunch with Matthew", "600 Main St"),
 
     ("Final project due August 15", 
-     next_day(8, 15), None, None, None, "Final project due", None),
+     next_day(8, 15), next_day(8, 15), None, None, "Final project due", None),
 
     ("Paper due next Wednesday", 
-     map_day("Wednesday"), None, None, None, "Paper due", None),
+     map_day("Wednesday"), map_day("Wednesday"), None, None, "Paper due",
+     None),
 
     ("Exam on February 27th at 5pm", 
-     next_day(2, 27), None, time(17), None, "Exam", None),
+     next_day(2, 27), next_day(2, 27), time(17), None, "Exam", None),
 
     ("Meeting at Noon next Thursday", 
-     map_day("Thursday"), None, time(12), None, "Meeting", None),
+     map_day("Thursday"), map_day("Thursday"), time(12), None, "Meeting",
+     None),
 
     ("Buy milk tomorrow 5 to 6", 
-     tomorrow, None, time(17), time(18), "Buy milk", None),
+     tomorrow, tomorrow, time(17), time(18), "Buy milk", None),
 
     ("Meet with Cody at Apple Store tomorrow from 5 to 6", 
-     tomorrow, None, time(17), time(18), "Meet with Cody",
+     tomorrow, tomorrow, time(17), time(18), "Meet with Cody",
      "Apple Store"),
 
     ("Meet with Cody tomorrow at Apple Store from 5 to 6", 
-     tomorrow, None, time(17), time(18), "Meet with Cody",
+     tomorrow, tomorrow, time(17), time(18), "Meet with Cody",
      "Apple Store"),
 
     ("Meet with Cody tomorrow 5 to 6 at Apple Store", 
-     tomorrow, None, time(17), time(18), "Meet with Cody",
+     tomorrow, tomorrow, time(17), time(18), "Meet with Cody",
      "Apple Store"),
 
     ("Dinner with Rhiannon tomorrow 7pm at New Gen Sushi", 
-     tomorrow, None, time(19), None, "Dinner with Rhiannon",
+     tomorrow, tomorrow, time(19), None, "Dinner with Rhiannon",
      "New Gen Sushi"),
 
     ("Brendan's 6th birthday party January 22 at 11:00 at our house.", 
-     next_day(1, 22), None, time(11), None, "Brendan's 6th birthday party",
-     "our house"),
+     next_day(1, 22), next_day(1, 22), time(11), None,
+     "Brendan's 6th birthday party", "our house"),
 
     ("Meeting from 5 - 6", 
      None, None, time(17), time(18), "Meeting", None),
@@ -721,18 +759,19 @@ testdata = [
      None, None, time(9), None, "Meeting", None), 
 
     ("Training Friday 1100-1200 in the big tent",
-     map_day("Friday"), None, time(11), time(12), "Training", "the big tent"),
+     map_day("Friday"), map_day("Friday"), time(11), time(12), "Training",
+     "the big tent"),
 
     ("Training Friday 1500-1730 in the big tent",
-     map_day("Friday"), None, time(15), time(17, 30), "Training",
+     map_day("Friday"), map_day("Friday"), time(15), time(17, 30), "Training",
      "the big tent"),
 
     ("Training Friday 1100-130p in the big tent",
-     map_day("Friday"), None, time(11), time(13, 30), "Training",
+     map_day("Friday"), map_day("Friday"), time(11), time(13, 30), "Training",
      "the big tent"),
 
     ("Fondue at Fondue Palace tomorrow at seven thirty pm", 
-     tomorrow, None, time(19, 30), None, "Fondue", "Fondue Palace"),
+     tomorrow, tomorrow, time(19, 30), None, "Fondue", "Fondue Palace"),
 
     ("Fondue at seven o'clock at Fondue Palace", 
      None, None, time(19), None, "Fondue", "Fondue Palace"),
@@ -754,19 +793,19 @@ testdata = [
      "45 Hilldale Lane, Port Washington, NY"),
      
     ("Lunch with Preshit tomorrow at 8 PM until 11:20", 
-     tomorrow, None, time(20), time(23, 20), "Lunch with Preshit",
+     tomorrow, tomorrow, time(20), time(23, 20), "Lunch with Preshit",
      None),
 
     ("Lunch with Preshit tomorrow at 8 until 11:20", 
-     tomorrow, None, time(8), time(11, 20), "Lunch with Preshit",
+     tomorrow, tomorrow, time(8), time(11, 20), "Lunch with Preshit",
      None),
 
     ("Lunch with Preshit tomorrow at 11 till 12:20", 
-     tomorrow, None, time(11), time(12, 20), "Lunch with Preshit",
+     tomorrow, tomorrow, time(11), time(12, 20), "Lunch with Preshit",
      None),
 
     ("Ski Corbet's Couloir tomorrow morning at 8", 
-     tomorrow, None, time(8), None, "Ski Corbet's Couloir", None),
+     tomorrow, tomorrow, time(8), None, "Ski Corbet's Couloir", None),
 
     ("Graduate Computer Graphics at NYU, West 4th St., New York, from 5 - 7", 
      None, None, time(17), time(19), "Graduate Computer Graphics",
@@ -777,118 +816,137 @@ testdata = [
      "NYU, 16 East 4th Street, New York"),
 
     ("At Laguna Beach, CA, United States, surfing lessons tue at 0800AM", 
-     map_day("Tuesday"), None, time(8), None, "surfing lessons",
+     map_day("Tuesday"), map_day("Tuesday"), time(8), None, "surfing lessons",
      "Laguna Beach, CA, United States"),
 
     ("Star gazing with Jen at the Custer Observatory, Southold, NY on Saturday from 10-11pm", 
-     map_day("Saturday"), None, time(22), time(23), "Star gazing with Jen",
-     "the Custer Observatory, Southold, NY"),
+     map_day("Saturday"), map_day("Saturday"), time(22), time(23),
+     "Star gazing with Jen", "the Custer Observatory, Southold, NY"),
 
     ("WWDC at Moscone West, San Francisco, CA June 11th to 15th", 
      next_day(6, 11), next_day(6, 11) + timedelta(days=4), None, None,
      "WWDC", "Moscone West, San Francisco, CA"),
 
     ("dec 1 at 3pm - 11", 
-     next_day(12, 1), None, time(15), time(23), None, None),
+     next_day(12, 1), next_day(12, 1), time(15), time(23), None, None),
+
+    ("dec 1 from 3pm - 11", 
+     next_day(12, 1), next_day(12, 1), time(15), time(23), None, None),
+
+    ("dec 1 from 3pm to 11", 
+     next_day(12, 1), next_day(12, 1), time(15), time(23), None, None),
+
+    ("dec 1 from 3 to 11p", 
+     next_day(12, 1), next_day(12, 1), time(15), time(23), None, None),
 
     ("jan 1st at 9am through january fifth 8pm", 
      next_day(1, 1), next_day(1,1) + timedelta(days=4), time(9), time(20),
      None, None),
 
     ("Lunch with becca at cafe thu 1-2", 
-     map_day("Thursday"), None, time(13), time(14), "Lunch with becca", "cafe"),
+     map_day("Thursday"), map_day("Thursday"), time(13), time(14),
+     "Lunch with becca", "cafe"),
 
     ("lunch with John at \"Taco Tuesdays\" Friday 12 pm", 
-     map_day("Friday"), None, time(12), None, "lunch with John",
+     map_day("Friday"), map_day("Friday"), time(12), None, "lunch with John",
      "\"Taco Tuesdays\""),
 
     ("Volleyball at 5pm", 
      None, None, time(17), None, "Volleyball", None), 
 
     ("Bank holiday 8/14/2019 no school", 
-     date(2019, 8, 14), None, None, None, "Bank holiday no school", None),
+     date(2019, 8, 14), date(2019, 8, 14), None, None,
+     "Bank holiday no school", None),
 
     ("Staff meeting next Monday at 13:00", 
-     map_day("Monday"), None, time(13), None, "Staff meeting", None), 
+     map_day("Monday"), map_day("Monday"), time(13), None, "Staff meeting",
+     None), 
 
     ("Running w/ Pat 2:15 tomorrow for 45 minutes", 
-     tomorrow, None, time(14, 15), time(15), "Running w/ Pat",
+     tomorrow, tomorrow, time(14, 15), time(15), "Running w/ Pat",
      None),
 
     ("Running w/ Pat in 2 hours", 
-     today, None, in_x_min(120), None, "Running w/ Pat", None),
+     today, today, in_x_min(120), None, "Running w/ Pat", None),
 
     ("Running w/ Pat in 20 MIN", 
-     today, None, in_x_min(20), None, "Running w/ Pat", None),
+     today, today, in_x_min(20), None, "Running w/ Pat", None),
 
     ("Running w/ Pat in 2.5 hours", 
-     today, None, in_x_min(150), None, "Running w/ Pat", None),
+     today, today, in_x_min(150), None, "Running w/ Pat", None),
 
     ("Running with Pat 2:15 - 3 pm tomorrow", 
-     tomorrow, None, time(14, 15), time(15), "Running with Pat", None),
+     tomorrow, tomorrow, time(14, 15), time(15), "Running with Pat", None),
 
     ("National Conference 9/23 - 9/26 in Atlanta", 
      next_day(9, 23), next_day(9, 23) + timedelta(days=3), None, None,
      "National Conference", "Atlanta"),
 
     ("Tennis practice Tuesday 7pm to 9pm", 
-     map_day("Tuesday"), None, time(19), time(21), "Tennis practice", None),
+     map_day("Tuesday"), map_day("Tuesday"), time(19), time(21),
+     "Tennis practice", None),
 
     ("Language Class Wednesday 7-8pm", 
-     map_day("Wednesday"), None, time(19), time(20), "Language Class", None), 
+     map_day("Wednesday"), map_day("Wednesday"), time(19), time(20),
+     "Language Class", None), 
 
     ("Appointment at Somewhere on June 3rd 10am-10:25am", 
-     next_day(6, 3), None, time(10), time(10,25), "Appointment", "Somewhere"),
+     next_day(6, 3), next_day(6, 3), time(10), time(10,25), "Appointment",
+     "Somewhere"),
 
     ("Lunch tomorrow 15:00 in room 2", 
-     tomorrow, None, time(15), None, "Lunch", "room 2"),
+     tomorrow, tomorrow, time(15), None, "Lunch", "room 2"),
 
     ("Lunch with English Project Team at Fountain Dining Hall 12:15pm Thursday", 
-     map_day("Thursday"), None, time(12, 15), None,
+     map_day("Thursday"), map_day("Thursday"), time(12, 15), None,
      "Lunch with English Project Team", "Fountain Dining Hall"),
 
     ("Test event on 3/13 at 245 until 4 at 666 Main Street", 
-     next_day(3, 13), None, time(14, 45), time(16), "Test event",
+     next_day(3, 13), next_day(3, 13), time(14, 45), time(16), "Test event",
      "666 Main Street"),
 
     ("Conference call Monday 9am", 
-     map_day("Monday"), None, time(9), None, "Conference call", None),
+     map_day("Monday"), map_day("Monday"), time(9), None, "Conference call",
+     None),
 
     ("Workout at Power 10 Thursday at 11:30", 
-     map_day("Thursday"), None, time(11, 30), None, "Workout", "Power 10"),
+     map_day("Thursday"), map_day("Thursday"), time(11, 30), None, "Workout",
+     "Power 10"),
 
     ("Call John Bates to apologize tomorrow at 9", 
-     tomorrow, None, time(9), None, "Call John Bates to apologize", None),
+     tomorrow, tomorrow, time(9), None, "Call John Bates to apologize", None),
 
     ("Call John Bates with apology tomorrow at 9", 
-     tomorrow, None, time(9), None, "Call John Bates with apology", None),
+     tomorrow, tomorrow, time(9), None, "Call John Bates with apology", None),
 
     ("breakfast with Kohli tomorrow at 4 to 8 am", 
-     tomorrow, None, time(4), time(8), "breakfast with Kohli", None),
+     tomorrow, tomorrow, time(4), time(8), "breakfast with Kohli", None),
 
     ("Tennis with David and Shaun saturday at 10:30", 
-     map_day("Saturday"), None, time(10, 30), None,
+     map_day("Saturday"), map_day("Saturday"), time(10, 30), None,
      "Tennis with David and Shaun", None),
 
     ("Meeting with Johnny, Marco, and Alexandri to talk about the research 5pm tomorrow", 
-     tomorrow, None, time(17), None,
+     tomorrow, tomorrow, time(17), None,
      "Meeting with Johnny, Marco, and Alexandri to talk about the research",
      None),
 
     ("At the plaza Monday, talk to Joe about money laundering from 6:30Pm to 8", 
-     map_day("Monday"), None, time(18, 30), time(20),
+     map_day("Monday"), map_day("Monday"), time(18, 30), time(20),
      "talk to Joe about money laundering", "the plaza"),
 
     ("Dinner with Ben Kerwing 2 weeks from wednesday at Lupa from 7 to 9", 
-     map_day("Wednesday") + timedelta(days=14), None, time(19), time(21),
+     map_day("Wednesday") + timedelta(days=14),
+     map_day("Wednesday") + timedelta(days=14), time(19), time(21),
      "Dinner with Ben Kerwing", "Lupa"),
 
     ("Dinner with Ben Kerwing two weeks from wednesday at Lupa from 7 to 9", 
-     map_day("Wednesday") + timedelta(days=14), None, time(19), time(21),
+     map_day("Wednesday") + timedelta(days=14),
+     map_day("Wednesday") + timedelta(days=14), time(19), time(21),
      "Dinner with Ben Kerwing", "Lupa"),
 
     ("dinner with Erin tomorrow evening", 
-     tomorrow, None, None, None, "dinner with Erin", None),
+     tomorrow, tomorrow, None, None, "dinner with Erin", None),
 
     ("at Los Angeles from 5-6 test with paul", 
      None, None, time(17), time(18), "test with paul", "Los Angeles"),
@@ -897,129 +955,140 @@ testdata = [
      None, None, time(17), time(18), "test with paul", "Los Angeles"),
 
     ("Brunch for Amanda's birthday in Williamsburg April 28th at 12:00p", 
-     next_day(4, 28), None, time(12), None, "Brunch for Amanda's birthday",
-     "Williamsburg"),
+     next_day(4, 28), next_day(4, 28), time(12), None,
+     "Brunch for Amanda's birthday", "Williamsburg"),
 
     ("Bob's 25th anniversary on May, 14th 2020", 
-     date(2020, 5, 14), None, None, None, "Bob's 25th anniversary", None),
+     date(2020, 5, 14), date(2020, 5, 14), None, None,
+     "Bob's 25th anniversary", None),
 
     ("Meeting is Tuesday 8:00-10:00",
-     map_day("Tuesday"), None, time(8), time(10), "Meeting", None),
+     map_day("Tuesday"), map_day("Tuesday"), time(8), time(10), "Meeting",
+     None),
      
     ("Discuss project plan Wednesday 8:00am-10:00am",
-     map_day("Wednesday"), None, time(8), time(10), "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(8), time(10),
+     "Discuss project plan", None),
 
     ("Discuss project plan Wednesday 8:00-10:00am",
-     map_day("Wednesday"), None, time(8), time(10), "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(8), time(10),
+     "Discuss project plan", None),
 
     ("Discuss project plan Wednesday 8:00am-10:00",
-     map_day("Wednesday"), None, time(8), time(10), "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(8), time(10),
+     "Discuss project plan", None),
      
     ("Discuss project plan Wednesday 8:00-10:00a.m.",
-     map_day("Wednesday"), None, time(8), time(10), "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(8), time(10),
+     "Discuss project plan", None),
 
     ("Discuss project plan Wednesday 8:00-10:00 a.m.",
-     map_day("Wednesday"), None, time(8), time(10), "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(8), time(10),
+     "Discuss project plan", None),
      
     ("Discuss project plan Wednesday 8:00-10:00 p.m.",
-     map_day("Wednesday"), None, time(20), time(22), "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(20), time(22),
+     "Discuss project plan", None),
      
     ("Discuss project plan Wednesday 8:00:00-10:00:00",
-     map_day("Wednesday"), None, time(8), time(10), "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(8), time(10),
+     "Discuss project plan", None),
 
     ("Discuss project plan Wed 8:00:00p-10:00:00p",
-     map_day("Wednesday"), None, time(20), time(22), "Discuss project plan",
-     None),     
+     map_day("Wednesday"), map_day("Wednesday"), time(20), time(22),
+     "Discuss project plan", None),     
 
     ("Discuss project plan Weds 8-10:00:00p",
-     map_day("Wednesday"), None, time(20), time(22), "Discuss project plan",
-     None),     
+     map_day("Wednesday"), map_day("Wednesday"), time(20), time(22),
+     "Discuss project plan", None),     
      
 #    ("Discuss project plan Weds 13p  #error",   TODO
      
     ("Discuss project plan Weds 130p",
-     map_day("Wednesday"), None, time(13,30), None, "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(13,30), None,
+     "Discuss project plan", None),
      
     ("Discuss project plan Weds 1230p",
-     map_day("Wednesday"), None, time(12,30), None, "Discuss project plan",
-     None),
+     map_day("Wednesday"), map_day("Wednesday"), time(12,30), None,
+     "Discuss project plan", None),
 
     ("Meet Thursday 8:30-10",
-     map_day("Thursday"), None, time(8,30), time(10), "Meet", None),
+     map_day("Thursday"), map_day("Thursday"), time(8,30), time(10), "Meet",
+     None),
 
     ("Meet Thursday 8:30AM-10",
-     map_day("Thursday"), None, time(8,30), time(10), "Meet", None),
+     map_day("Thursday"), map_day("Thursday"), time(8,30), time(10), "Meet",
+     None),
      
     ("Meet Thursday 8:30p-10",
-     map_day("Thursday"), None, time(20,30), time(22), "Meet", None),
+     map_day("Thursday"), map_day("Thursday"), time(20,30), time(22), "Meet",
+     None),
      
     ("Meet Thursday 8p-10",
-     map_day("Thursday"), None, time(20), time(22), "Meet", None),
+     map_day("Thursday"), map_day("Thursday"), time(20), time(22), "Meet",
+     None),
      
     ("Meet Th 8p-10",
-     map_day("Thursday"), None, time(20), time(22), "Meet", None),
+     map_day("Thursday"), map_day("Thursday"), time(20), time(22), "Meet",
+     None),
      
     ("Run Friday 8-10 a.m.",
-     map_day("Friday"), None, time(8), time(10), "Run", None),
+     map_day("Friday"), map_day("Friday"), time(8), time(10), "Run", None),
      
     ("Run Friday 8-10 AM",
-     map_day("Friday"), None, time(8), time(10), "Run", None),
+     map_day("Friday"), map_day("Friday"), time(8), time(10), "Run", None),
 
     ("Run Friday 8-10 a",
-     map_day("Friday"), None, time(8), time(10), "Run", None),
+     map_day("Friday"), map_day("Friday"), time(8), time(10), "Run", None),
      
     ("Run Friday 8:00",
-     map_day("Friday"), None, time(8), None, "Run", None),
+     map_day("Friday"), map_day("Friday"), time(8), None, "Run", None),
      
     ("Run Friday 8:00AM",
-     map_day("Friday"), None, time(8), None, "Run", None),
+     map_day("Friday"), map_day("Friday"), time(8), None, "Run", None),
      
     ("Run Friday 8:00A.M.",
-     map_day("Friday"), None, time(8), None, "Run", None),
+     map_day("Friday"), map_day("Friday"), time(8), None, "Run", None),
      
     ("Dance Sat 3p",
-     map_day("Saturday"), None, time(15), None, "Dance", None),
+     map_day("Saturday"), map_day("Saturday"), time(15), None, "Dance", None),
      
     ("Dance Saturday 3P",
-     map_day("Saturday"), None, time(15), None, "Dance", None),
+     map_day("Saturday"), map_day("Saturday"), time(15), None, "Dance", None),
      
     ("Dance sat 11p",
-     map_day("Saturday"), None, time(23), None, "Dance", None),
+     map_day("Saturday"), map_day("Saturday"), time(23), None, "Dance", None),
      
     ("Cooking class Sunday 3o'clock",
-     map_day("Sunday"), None, time(15), None, "Cooking class", None),
+     map_day("Sunday"), map_day("Sunday"), time(15), None, "Cooking class",
+     None),
      
     ("Cooking class Sunday 3oclock",
-     map_day("Sunday"), None, time(15), None, "Cooking class", None),
+     map_day("Sunday"), map_day("Sunday"), time(15), None, "Cooking class",
+     None),
      
     ("Cooking class Sun 3 O'Clock",
-     map_day("Sunday"), None, time(15), None, "Cooking class", None),
+     map_day("Sunday"), map_day("Sunday"), time(15), None, "Cooking class",
+     None),
      
     ("Cooking class Sun 3 Oclock",
-     map_day("Sunday"), None, time(15), None, "Cooking class", None),
+     map_day("Sunday"), map_day("Sunday"), time(15), None, "Cooking class",
+     None),
      
     ("Labor day 9/3/18",
-     date(2018, 9, 3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day 09/03/18",
-     date(2018, 9, 3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day 09/03/2018",
-     date(2018, 9, 3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day is 2018/9/3",
-     date(2018, 9, 3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day is 2018/09/03",
-     date(2018, 9, 3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Vacation 7/2-7/13",
      next_day(7,2), next_day(7,2) + timedelta(days=11), None, None, "Vacation",
@@ -1038,111 +1107,115 @@ testdata = [
 #    ("Vacation 13/24   # error",  TODO
      
     ("Labor day 9-3-18",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day 09-03-18",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day 09-03-2018",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day is 2018-09-03",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
 #    ("Vacation 13-24   # error",  TODO
      
     ("Labor day is 3 September 2018",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day is 3 September 18",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day is September 3, 18",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day is Sept 3, 2018",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Labor day is Sep 3 2018",
-     date(2018,9,3), None, None, None, "Labor day", None),
+     date(2018, 9, 3), date(2018, 9, 3), None, None, "Labor day", None),
      
     ("Liz's birthday is Jan twenty-seven",
-     next_day(1, 27), None, None, None, "Liz's birthday", None),
+     next_day(1, 27), next_day(1, 27), None, None, "Liz's birthday", None),
      
     ("Liz's birthday is January 27",
-     next_day(1, 27), None, None, None, "Liz's birthday", None),
+     next_day(1, 27), next_day(1, 27), None, None, "Liz's birthday", None),
      
     ("Liz's birthday is Feb 27",
-     next_day(2, 27), None, None, None, "Liz's birthday", None),
+     next_day(2, 27), next_day(2, 27), None, None, "Liz's birthday", None),
      
     ("Liz's birthday is February 27",
-     next_day(2, 27), None, None, None, "Liz's birthday", None),
+     next_day(2, 27), next_day(2, 27), None, None, "Liz's birthday", None),
      
     ("Liz's birthday is March 10",
-     next_day(3, 10), None, None, None, "Liz's birthday", None),
+     next_day(3, 10), next_day(3, 10), None, None, "Liz's birthday", None),
      
     ("Liz's birthday is Mar 10",
-     next_day(3, 10), None, None, None, "Liz's birthday", None),
+     next_day(3, 10), next_day(3, 10), None, None, "Liz's birthday", None),
      
     ("Doug's birthday is April 20",
-     next_day(4, 20), None, None, None, "Doug's birthday", None),
+     next_day(4, 20), next_day(4, 20), None, None, "Doug's birthday", None),
      
     ("Doug's birthday is on 20 Apr",
-     next_day(4, 20), None, None, None, "Doug's birthday", None),
+     next_day(4, 20), next_day(4, 20), None, None, "Doug's birthday", None),
      
     ("Doug's birthday is May ten",
-     next_day(5, 10), None, None, None, "Doug's birthday", None),
+     next_day(5, 10), next_day(5, 10), None, None, "Doug's birthday", None),
      
     ("Doug's birthday is the tenth of May",
-     next_day(5, 10), None, None, None, "Doug's birthday", None),
+     next_day(5, 10), next_day(5, 10), None, None, "Doug's birthday", None),
      
     ("Doug's birthday is on the tenth of May",
-     next_day(5, 10), None, None, None, "Doug's birthday", None),
+     next_day(5, 10), next_day(5, 10), None, None, "Doug's birthday", None),
      
     ("Mom's birthday is June 22",
-     next_day(6,22), None, None, None, "Mom's birthday", None),
+     next_day(6,22), next_day(6,22), None, None, "Mom's birthday", None),
      
     ("Mom's birthday is 22 Jun",
-     next_day(6,22), None, None, None, "Mom's birthday", None),
+     next_day(6,22), next_day(6,22), None, None, "Mom's birthday", None),
      
     ("Mom's birthday is July 22",
-     next_day(7,22), None, None, None, "Mom's birthday", None),
+     next_day(7,22), next_day(7,22), None, None, "Mom's birthday", None),
      
     ("Mom's birthday is 22 Jul",
-     next_day(7,22), None, None, None, "Mom's birthday", None),
+     next_day(7,22), next_day(7,22), None, None, "Mom's birthday", None),
      
     ("April's birthday is August seven",
-     next_day(8,7), None, None, None, "April's birthday", None),
+     next_day(8,7), next_day(8,7), None, None, "April's birthday", None),
      
     ("April's birthday is 7 aug",
-     next_day(8,7), None, None, None, "April's birthday", None),
+     next_day(8,7), next_day(8,7), None, None, "April's birthday", None),
      
     ("April wedding shower on Sep 3",
-     next_day(9,3), None, None, None, "April wedding shower", None),
+     next_day(9,3), next_day(9,3), None, None, "April wedding shower", None),
 
     ("Dad's birthday is oct 24, 1937",
-     date(1937, 10, 24), None, None, None, "Dad's birthday", None),
+     date(1937, 10, 24), date(1937, 10, 24), None, None, "Dad's birthday",
+     None),
      
     ("Dad's birthday is 24 October 1937",
-     date(1937, 10, 24), None, None, None, "Dad's birthday", None),
+     date(1937, 10, 24), date(1937, 10, 24), None, None, "Dad's birthday",
+     None),
      
     ("Thanksgiving is November 23 2017",
-     date(2017, 11, 23), None, None, None, "Thanksgiving", None),
+     date(2017, 11, 23), date(2017, 11, 23), None, None, "Thanksgiving", None),
      
     ("Thanksgiving is 23 November, 2017",
-     date(2017, 11, 23), None, None, None, "Thanksgiving", None),
+     date(2017, 11, 23), date(2017, 11, 23), None, None, "Thanksgiving", None),
      
     ("Thanksgiving is 23 Nov",
-     next_day(11, 23), None, None, None, "Thanksgiving", None),
+     next_day(11, 23), next_day(11, 23), None, None, "Thanksgiving", None),
      
     ("Thanksgiving is Nov 23",
-     next_day(11, 23), None, None, None, "Thanksgiving", None),
+     next_day(11, 23), next_day(11, 23), None, None, "Thanksgiving", None),
      
     ("The choir concert is on Dec 10",
-     next_day(12, 10), None, None, None, "The choir concert", None),
+     next_day(12, 10), next_day(12, 10), None, None, "The choir concert",
+     None),
      
     ("The choir concert is on 10 December",
-     next_day(12, 10), None, None, None, "The choir concert", None),
+     next_day(12, 10), next_day(12, 10), None, None, "The choir concert",
+     None),
      
     ("Winter break is Dec 20 til Jan 3",
      next_day(12,20), next_day(12,20) + timedelta(days=14), None, None,
@@ -1153,26 +1226,31 @@ testdata = [
      "Winter break", None),
      
     ("My vacation is in two weeks",
-     today+timedelta(days=14), None, None, None, "My vacation", None),
+     today+timedelta(days=14), today+timedelta(days=14), None, None,
+     "My vacation", None),
      
     ("My vacation starts in a month",
-     in_x_months(1), None, None, None, "My vacation starts", None),
+     in_x_months(1), in_x_months(1), None, None, "My vacation starts", None),
 
     ("Dinner at TGI Friday on tue at 7 to 8:30",
-     map_day("Tuesday"), None, time(19), time(20,30), "Dinner", "TGI Friday"),
+     map_day("Tuesday"), map_day("Tuesday"), time(19), time(20,30), "Dinner",
+     "TGI Friday"),
 
     ("Meet at Ruby Tuesday on Weds at noon",
-     map_day("Wednesday"), None, time(12), None, "Meet", "Ruby Tuesday"),
+     map_day("Wednesday"), map_day("Wednesday"), time(12), None, "Meet",
+     "Ruby Tuesday"),
 
     ("mimosas at Vasu's in two days at 6p",
-     today + timedelta(days=2), None, time(18), None, "mimosas", "Vasu's"),
+     today + timedelta(days=2), today + timedelta(days=2), time(18), None,
+     "mimosas", "Vasu's"),
 
     ("mimosas at Vasu's in 3 d at 6p",
-     today + timedelta(days=3), None, time(18), None, "mimosas", "Vasu's"),
+     today + timedelta(days=3), today + timedelta(days=3), time(18), None,
+     "mimosas", "Vasu's"),
 
     ("mimosas at Vasu's in a day at 6p",
-     tomorrow, None, time(18), None, "mimosas", "Vasu's")
+     tomorrow, tomorrow, time(18), None, "mimosas", "Vasu's")
 ]
      
 for t in testdata:
-    assert(len(t) == 7)
+    assert len(t) == 7, t
