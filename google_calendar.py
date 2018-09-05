@@ -1,7 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python3
 
+import sys
 import urllib.parse
 from datetime import *
+import subprocess
+
+#sys.path.append("/Users/howdy/Code/Event NLP")
 import event_parser
 
 def convert_date_time(d: date, t: time) -> str:
@@ -47,10 +51,18 @@ def parse_to_google_calendar(raw: str,
     input.
     """
 
-    (st_date, end_date, st_time, end_time, title, loc) = event_parser.parse(raw, debug)
+    ret = event_parser.parse(raw, debug, log=True)
+    (st_date, end_date, st_time, end_time, title, loc) = ret
+
+    if st_date is None:
+        st_date = event_parser.today
+        end_date = event_parser.today
 
     if st_time is not None and end_time is None:
-        end_time = st_time + timedelta(minutes = default_duration)
+        st_dt = datetime.combine(st_date, st_time)
+        end_dt = st_dt + timedelta(minutes = default_duration)
+        end_date = end_dt.date()
+        end_time = end_dt.time()
 
     anchor = "https://calendar.google.com/calendar/event?"
 
@@ -59,8 +71,25 @@ def parse_to_google_calendar(raw: str,
     
     params = { 'action' : 'TEMPLATE',
                'text' : title,
-               'location' : loc,
                'dates' : f"{start}/{end}" }
+    if loc:
+        params['location'] = loc
+
     return (anchor + urllib.parse.urlencode(params))
 
 
+if __name__ == '__main__':
+
+    def usage():
+        bn = os.path.basename(sys.argv[0])
+        usage_msg = ("Usage: {exe_name} Event Text"
+                     "\n")
+        print(usage_msg.format(exe_name=bn))
+        sys.exit(1)
+
+    if len(sys.argv) < 2:
+        usage()
+
+    s = " ".join(sys.argv[1:])
+    url = parse_to_google_calendar(s)
+    subprocess.call(["open", url])
