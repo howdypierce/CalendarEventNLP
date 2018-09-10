@@ -1,8 +1,24 @@
+# testdata.py: test data for parsing by calendar natural language
+# processor.
 #
-# This is a set of test data for parsing by my calendar natural
-# language processor.
+# Some test cases based on cases from
+#     https://github.com/jeffreyrosenbluth/CalNLP
 #
-# Some test cases taken from https://github.com/jeffreyrosenbluth/CalNLP
+# The remainder copyright (C) 2018 Cardinal Peak LLC
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 
 from datetime import date, time, timedelta, datetime
 from dateutil import relativedelta
