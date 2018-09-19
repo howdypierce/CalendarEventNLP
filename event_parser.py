@@ -19,9 +19,9 @@
 
 import nltk
 import re
-from datetime import *
+from datetime import time, date, timedelta, datetime
 from dateutil import relativedelta
-from etoken import *
+from etoken import EToken, padded
 from spelled_numbers import handle_spelled_number
 
 logfile = "/Users/howdy/Code/Event NLP/queries.log"
@@ -56,30 +56,31 @@ yesterday = today - timedelta(days=1)
 year_range = [1901, 2099]
 
 # regexps to parse for time
-ampm       = r"((?:[ap]m?)|(?:[ap]\.?m\.?))"  # a, am, a.m.
-timespec   = r"(\d{1,2}):(\d{2})(:\d{2})?" + ampm + "?"  # hh:mm[:ss][am]
+ampm = r"((?:[ap]m?)|(?:[ap]\.?m\.?))"    # a, am, a.m.
+timespec = r"(\d{1,2}):(\d{2})(:\d{2})?" + ampm + "?"  # hh:mm[:ss][am]
 hourspec_m = r"(\d{1,2})" + ampm          # hham, hh in range 1..12
-hourspec   = r"(\d{1,2})" + ampm + "?"    # hh[am], hh in range 1..23
-milspec    = r"(\d{2})(\d{2})"            # hhmm, all 4 digits present
-nocolon_m  = r"(\d{1,2})(\d{2})" + ampm   # hhmmam, 1 or 2 h digits
-nocolon    = nocolon_m + "?"              # hhmm[am], 1 or 2 h digits
-oclspec    = r"(\d{1,2})o'?clock"  # hho'clock, hh in range 1..12
-mid_noon   = r"(midnight)|(noon)"
+hourspec = r"(\d{1,2})" + ampm + "?"      # hh[am], hh in range 1..23
+milspec = r"(\d{2})(\d{2})"               # hhmm, all 4 digits present
+nocolon_m = r"(\d{1,2})(\d{2})" + ampm    # hhmmam, 1 or 2 h digits
+nocolon = nocolon_m + "?"                 # hhmm[am], 1 or 2 h digits
+oclspec = r"(\d{1,2})o'?clock"            # hho'clock, hh in range 1..12
+mid_noon = r"(midnight)|(noon)"
 
 # following matches strings that are unambiguously times
-re_time_certain = ( "(" + timespec + ")|"
-                    "(" + hourspec_m + ")|"
-                    "(" + nocolon_m + ")|"
-                    "(" + oclspec + ")|"
-                    "(" + mid_noon + ")" )
+re_time_certain = ("(" + timespec + ")|"
+                   "(" + hourspec_m + ")|"
+                   "(" + nocolon_m + ")|"
+                   "(" + oclspec + ")|"
+                   "(" + mid_noon + ")")
 
 # more permissive, anything that might be a time; must be a superset
 # of re_time_certain
-re_time_possible = ( "(" + timespec + ")|"
-                     "(" + hourspec + ")|"
-                     "(" + nocolon + ")|"
-                     "(" + oclspec + ")|"
-                     "(" + mid_noon + ")" )
+re_time_possible = ("(" + timespec + ")|"
+                    "(" + hourspec + ")|"
+                    "(" + nocolon + ")|"
+                    "(" + oclspec + ")|"
+                    "(" + mid_noon + ")")
+
 
 def parse_time_to_norm(s: str) -> str:
     """Attempt to parse a string into a time.
@@ -96,7 +97,7 @@ def parse_time_to_norm(s: str) -> str:
     return a string of one of the forms
 
        "abstime:hour:minute:second", with hour in the range 0-23, if
-          we can determine for certain the am/pm 
+          we can determine for certain the am/pm
 
        "reltime:hour:minute:second", with hour in the range 1-12, if we
          cannot determine the am/pm
@@ -135,7 +136,7 @@ def parse_time_to_norm(s: str) -> str:
             if m.group(1) in ["0", "00"]:
                 meridian_specified = True
                 is_pm = False
-            
+
     if hour is None:
         m = re.fullmatch(hourspec, s)
         if m and 1 <= int(m.group(1)) <= 23:
@@ -143,7 +144,7 @@ def parse_time_to_norm(s: str) -> str:
             minutes = 0
             if m.group(2):
                 if (hour > 12):
-                    hour = None  
+                    hour = None
                 else:
                     meridian_specified = True
                     if m.group(2)[0] == "p":
@@ -163,7 +164,7 @@ def parse_time_to_norm(s: str) -> str:
             minutes = int(m.group(2))
             if m.group(3):
                 if (hour > 12):
-                    hour = None  
+                    hour = None
                 else:
                     meridian_specified = True
                     if m.group(3)[0] == "p":
@@ -178,8 +179,8 @@ def parse_time_to_norm(s: str) -> str:
 
     if hour is None:
         return None
-    
-    if (not 0 <= hour <=23):
+
+    if (not 0 <= hour <= 23):
         return None
     if (not 0 <= minutes <= 59):
         return None
@@ -194,6 +195,7 @@ def parse_time_to_norm(s: str) -> str:
     else:
         return f"reltime:{hour:02}:{minutes:02}:{seconds:02}"
 
+
 def parse_date_to_norm(s: str) -> str:
     """Attempt to parse a string into a date.
 
@@ -203,13 +205,13 @@ def parse_date_to_norm(s: str) -> str:
         a weekday, including common abbreviations
         today | tomorrow | yesterday
        "absdate:month/day/year", if we know the year for certain
-       "reldate:(stuff)", if we cannot determine the year 
+       "reldate:(stuff)", if we cannot determine the year
 
     return a string of one of the normalized date forms
 
        "absdate:month/day/year", if we know the year for certain
-       "reldate:month/day", if we cannot determine the year 
-       "reldate:weekday:(num)",  (e.g., "on Thursday") 
+       "reldate:month/day", if we cannot determine the year
+       "reldate:weekday:(num)",  (e.g., "on Thursday")
        "reldate:monthday:(num)", (e.g., "on the 21st")
 
     otherwise return None
@@ -225,9 +227,12 @@ def parse_date_to_norm(s: str) -> str:
         return f"reldate:weekday:{num}"
 
     # today, tomorrow
-    if s == "today": return today.strftime("absdate:%m/%d/%Y")
-    if s == "tomorrow": return tomorrow.strftime("absdate:%m/%d/%Y")
-    if s == "yesterday": return yesterday.strftime("absdate:%m/%d/%Y")
+    if s == "today":
+        return today.strftime("absdate:%m/%d/%Y")
+    if s == "tomorrow":
+        return tomorrow.strftime("absdate:%m/%d/%Y")
+    if s == "yesterday":
+        return yesterday.strftime("absdate:%m/%d/%Y")
 
     year = None
     month = None
@@ -247,8 +252,8 @@ def parse_date_to_norm(s: str) -> str:
         month = int(m.group(1))
         day = int(m.group(3))
         if m.group(4):
-            year=int(m.group(4)[1:])
-            # arbitrarily: 2-digit years interpreted as within [-50,+49] of today
+            year = int(m.group(4)[1:])
+            # arbitrarily: 2-digit yrs interpreted as within [-50,+49] of now
             if year < 100:
                 year += 2000
                 if year > today.year + 49:
@@ -268,7 +273,7 @@ def parse_date_to_norm(s: str) -> str:
 
 
 def parse_time_date_range(tok: EToken, lookahead: EToken) -> list:
-    """First attempt to parse a token to a time or date.  
+    """First attempt to parse a token to a time or date.
 
     Handles the following cases:
 
@@ -330,7 +335,7 @@ def parse_time_date_range(tok: EToken, lookahead: EToken) -> list:
     # parse standalone time
     if lookahead.match(meridian_txt + ["o'clock", "oclock"]):
         m = re.fullmatch(re_time_possible, tok.val)
-        if m: 
+        if m:
             val = parse_time_to_norm(tok.val + lookahead.val)
             if val:
                 lookahead.sem = "IGN"
@@ -342,10 +347,9 @@ def parse_time_date_range(tok: EToken, lookahead: EToken) -> list:
         if val:
             return [EToken(val, "TIME", "TIME")]
 
-
     # date range
-    datespec = r"\d{1,2}/\d{1,2}(?:/(?:\d{2}|\d{4}))?" # mm/dd/yy or mm/dd/yyyy
-    datespec_yfirst = r"\d{4}/\d{1,2}/\d{1,2}" # yyyy/mm/dd
+    datespec = r"\d{1,2}/\d{1,2}(?:/(?:\d{2}|\d{4}))?"  # mm/dd/yy, mm/dd/yyyy
+    datespec_yfirst = r"\d{4}/\d{1,2}/\d{1,2}"          # yyyy/mm/dd
     m = re.match(f"^({datespec})-({datespec})$", tok.val)
     if m:
         st = parse_date_to_norm(m.group(1))
@@ -354,7 +358,7 @@ def parse_time_date_range(tok: EToken, lookahead: EToken) -> list:
             return [EToken(st, "DATE", "ST_DATE"),
                     EToken("UNTIL", ":", "IGN"),
                     EToken(end, "DATE", "END_DATE")]
-        
+
     m = re.match(f"^({datespec_yfirst})-({datespec_yfirst})$", tok.val)
     if m:
         st = parse_date_to_norm(m.group(1))
@@ -367,7 +371,8 @@ def parse_time_date_range(tok: EToken, lookahead: EToken) -> list:
     m = re.match(f"^({datespec})|({datespec_yfirst})$", tok.val)
     if m:
         val = parse_date_to_norm(tok.val)
-        if val: return [EToken(val, "DATE", "DATE")]
+        if val:
+            return [EToken(val, "DATE", "DATE")]
 
     # we have to be conservative with dates specified using hyphens,
     # because they could mean a lot of different things. For now, it's
@@ -375,12 +380,15 @@ def parse_time_date_range(tok: EToken, lookahead: EToken) -> list:
     m = re.match(r"^(\d{1,2}|\d{4})-(\d{1,2})-(\d{2}|\d{4})$", tok.val)
     if m:
         val = parse_date_to_norm(tok.val)
-        if val: return [EToken(val, "DATE", "DATE")]
+        if val:
+            return [EToken(val, "DATE", "DATE")]
 
     # handle spelled weekdays and special strings
-    if tok.match(weekday_to_num) or tok.match(["today","tomorrow","yesterday"]):
+    if (tok.match(weekday_to_num) or
+        tok.match(["today", "tomorrow", "yesterday"])):
         val = parse_date_to_norm(tok.val)
-        if val: return [EToken(val, "DATE", "DATE")]
+        if val:
+            return [EToken(val, "DATE", "DATE")]
 
     return None
 
@@ -463,7 +471,8 @@ def collapse_expand_tokens(token_list: list) -> list:
     t = padded(token_list, 10)
 
     # ignore stuff we've already decided to ignore
-    if (t[0].sem == "IGN"): return []
+    if (t[0].sem == "IGN"):
+        return []
 
     # concatenate possessives
     if t[0].match(pos="NNP") and t[1].match(pos="POS"):
@@ -503,16 +512,19 @@ def collapse_expand_tokens(token_list: list) -> list:
 
     # time/date range
     res = parse_time_date_range(t[0], t[1])
-    if res: return res
+    if res:
+        return res
 
     # (month) (comma or THE - optional) (OD or CD) (comma - optional)
     # (CD - optional - year)
     d = 1
-    if (t[d].match(",", pos=",") or t[d].match("the", "DT")): d += 1
+    if (t[d].match(",", pos=",") or t[d].match("the", "DT")):
+        d += 1
     if (t[0].match(month_to_num) and t[d].match(pos=["CD", "OD"])):
         y = d+1
         res = None
-        if t[y].match(",", pos=","): y += 1
+        if t[y].match(",", pos=","):
+            y += 1
         if t[y].match(pos="CD"):
             res = parse_spelled_date(t[0], t[d], t[y])
             end_tok = y
@@ -520,19 +532,23 @@ def collapse_expand_tokens(token_list: list) -> list:
             res = parse_spelled_date(t[0], t[d], None)
             end_tok = d
         if res:
-            for i in range(1, end_tok+1): t[i].sem = "IGN"
+            for i in range(1, end_tok+1):
+                t[i].sem = "IGN"
             return [EToken(res, "DATE", "DATE")]
 
     # (THE - opt) (OD | CD day) (comma | OF - opt) (month)
     # (comma - opt) (CD - opt year)
     d = 0
-    if (t[d].match("the", "DT")): d += 1
+    if (t[d].match("the", "DT")):
+        d += 1
     m = d+1
-    if (t[m].match(",", pos=",") or t[m].match("of", pos="IN")): m += 1
+    if (t[m].match(",", pos=",") or t[m].match("of", pos="IN")):
+        m += 1
     if (t[d].match(pos=["CD", "OD"]) and t[m].match(month_to_num)):
         y = m+1
         res = None
-        if t[y].match(",", pos=","): y += 1
+        if t[y].match(",", pos=","):
+            y += 1
         if t[y].match(pos="CD"):
             res = parse_spelled_date(t[m], t[d], t[y])
             end_tok = y
@@ -540,12 +556,13 @@ def collapse_expand_tokens(token_list: list) -> list:
             res = parse_spelled_date(t[m], t[d], None)
             end_tok = m
         if res:
-            for i in range(1, end_tok+1): t[i].sem = "IGN"
+            for i in range(1, end_tok+1):
+                t[i].sem = "IGN"
             return [EToken(res, "DATE", "DATE")]
 
     # (the) (OD)
     if (t[0].match("the", "DT") and t[1].match(pos="OD")):
-        t[1].sem="IGN"
+        t[1].sem = "IGN"
         return [EToken(f"reldate:monthday:{t[1].val}", "DATE", "DATE")]
 
     return [t[0]]
@@ -611,8 +628,8 @@ def norm_to_time(t: EToken,
     relation is one of "after" (the default), "before", or
     "nearest". If the token is a reltime, then relation determines how
     the hint is interpreted. In the following examples, assume t is
-    "reltime:11:00:00" and hint is 3:00 pm: 
-       "after" -> returns 11:00 pm 
+    "reltime:11:00:00" and hint is 3:00 pm:
+       "after" -> returns 11:00 pm
        "before" -> returns 11:00 am
        "nearest" -> returns 11:00 am
     """
@@ -622,12 +639,13 @@ def norm_to_time(t: EToken,
     if not m:
         assert False, t
 
-    if hint is None: hint = time(12)
+    if hint is None:
+        hint = time(12)
 
     hour = int(m.group(2))
     minute = int(m.group(3))
     second = int(m.group(4))
-    
+
     # TODO: should also handle the case of wrapping aorund midnight,
     # but this requires modifying the end or start date, as well
 
@@ -636,11 +654,14 @@ def norm_to_time(t: EToken,
         if relation == "nearest":
             am_dist = abs(hour - hint.hour)
             pm_dist = abs(12 + hour - hint.hour)
-            if pm_dist < am_dist: hour += 12
+            if pm_dist < am_dist:
+                hour += 12
         elif relation == "after":
-            if hour < hint.hour: hour += 12
+            if hour < hint.hour:
+                hour += 12
         elif relation == "before":
-            if hour + 12 < hint.hour: hour += 12
+            if hour + 12 < hint.hour:
+                hour += 12
 
     return time(hour, minute, second)
 
@@ -649,9 +670,9 @@ def match_until(t: EToken) -> bool:
     """Returns true if this token is a form of 'until' or 'to'."""
     return (t.match(["to", "TO"]) or t.match(["-", ":"]) or
             t.match(["until", "til", "till", "thru", "through"]))
-    
 
-def parse_phrase(tok_list: list): 
+
+def parse_phrase(tok_list: list):
     """Parse for multi-word phrases.
 
     When called, examine the provided string of tokens. The list is
@@ -663,13 +684,15 @@ def parse_phrase(tok_list: list):
 
     # (from - optional) (time | CD) (until) (time | CD)
     m = 0
-    if t[0].match("from", "IN"): m += 1
+    if t[0].match("from", "IN"):
+        m += 1
     if (t[m].match(pos=["TIME", "CD"]) and match_until(t[m+1]) and
         t[m+2].match(pos=["TIME", "CD"])):
         st = parse_time_to_norm(t[m].val)
         end = parse_time_to_norm(t[m+2].val)
         if st is not None and end is not None:
-            if t[0].match("from"): t[0].sem = "IGN"
+            if t[0].match("from"):
+                t[0].sem = "IGN"
             t[m].val = st
             t[m].sem = "ST_TIME"
             t[m].pos = "TIME"
@@ -681,7 +704,8 @@ def parse_phrase(tok_list: list):
 
     # (from - optional) (date) (until) (date | CD)
     m = 0
-    if t[0].match("from", "IN"): m += 1
+    if t[0].match("from", "IN"):
+        m += 1
     if (t[m].match(pos="DATE") and match_until(t[m+1]) and
         t[m+2].match(pos=["DATE", "CD", "OD"])):
         st = parse_date_to_norm(t[m].val)
@@ -690,7 +714,8 @@ def parse_phrase(tok_list: list):
         else:
             end = parse_date_to_norm(t[m+2].val)
         if st is not None and end is not None:
-            if t[0].match("from"): t[0].sem = "IGN"
+            if t[0].match("from"):
+                t[0].sem = "IGN"
             t[m].val = st
             t[m].sem = "ST_DATE"
             t[m].pos = "DATE"
@@ -711,7 +736,8 @@ def parse_phrase(tok_list: list):
 
     # (in)? (a or CD) (week | month | day)  (from (date) - optional)
     m = 0
-    if t[0].match("IN", "IN"): m += 1
+    if t[0].match("IN", "IN"):
+        m += 1
     if ((t[m].match("a", "DT") or t[m].match(pos="CD")) and
         t[m+1].match(week_txt + month_txt + day_txt)):
         if t[m].pos == "DT":
@@ -741,7 +767,7 @@ def parse_phrase(tok_list: list):
         return
 
     # (DT or CD) (week | month | day) (after) (date)
-    if (t[0].match(pos=["DT","CD"]) and
+    if (t[0].match(pos=["DT", "CD"]) and
         t[1].match(week_txt + month_txt + day_txt) and
         t[2].match("after", "IN") and t[3].match(pos="DATE")):
         if t[0].pos == "DT":
@@ -749,7 +775,7 @@ def parse_phrase(tok_list: list):
         else:
             num = int(t[0].val)
         anchor = norm_to_date(t[3])
-        
+
         if (t[1].match(week_txt)):
             dt = anchor + timedelta(weeks=num)
         elif (t[1].match(month_txt)):
@@ -768,7 +794,8 @@ def parse_phrase(tok_list: list):
     if (t[0].match("in", "IN") and t[1].match(pos="CD") and
         t[2].match(minute_txt + hour_txt)):
         val = float(t[1].val)
-        if t[2].match(hour_txt): val *= 60
+        if t[2].match(hour_txt):
+            val *= 60
         dt = datetime.now() + timedelta(minutes=int(val))
         t[0].val = dt.strftime("absdate:%m/%d/%Y")
         t[0].pos = "DATE"
@@ -780,10 +807,11 @@ def parse_phrase(tok_list: list):
         return
 
     # (for) (CD) (minutes | hours) - duration
-    if (t[0].match("for", "IN") and t[1].match(pos="CD") and 
+    if (t[0].match("for", "IN") and t[1].match(pos="CD") and
         t[2].match(minute_txt + hour_txt)):
         val = float(t[1].val)
-        if t[2].match(hour_txt): val *= 60
+        if t[2].match(hour_txt):
+            val *= 60
         t[0].sem = "IGN"
         t[1].val = str(int(val))
         t[1].pos = "TIME"
@@ -803,25 +831,28 @@ def parse_phrase(tok_list: list):
     na_pos = noun_pos + adjective_pos
     loc_pos = noun_pos + adjective_pos + [",", "CD", "OD"]
     n = 1
-    if t[1].match(pos=["DT", "PRP", "PRP$"], sem="-"): n += 1
-    if (t[0].match(["at","in"], "IN") and t[n].match(pos=loc_pos, sem="-")):
+    if t[1].match(pos=["DT", "PRP", "PRP$"], sem="-"):
+        n += 1
+    if (t[0].match(["at", "in"], "IN") and t[n].match(pos=loc_pos, sem="-")):
         while t[n].match(pos=loc_pos, sem="-"):
             n += 1
         # n now points to one past the end token
 
         # see if we have at least one noun/adj
-        na_count=0
+        na_count = 0
         for i in range(1, n):
-            if t[i].match(pos=na_pos): na_count += 1
+            if t[i].match(pos=na_pos):
+                na_count += 1
 
         if na_count > 0:
             t[0].sem = "IGN"
             for i in range(1, n):
                 t[i].sem = "LOCATION"
             # If the last token in the noun phrase is a comma, ignore it
-            if t[n-1].match(pos=","): t[n-1].sem = "IGN"
+            if t[n-1].match(pos=","):
+                t[n-1].sem = "IGN"
             return
-        
+
     # (at) (CD) (CD), try it as a time ("at seven thirty")
     if (t[0].match("at", "IN") and t[1].match(pos="CD") and
         t[2].match(pos="CD")):
@@ -850,15 +881,15 @@ def find_default_time_for_event(title_toks: list) -> time:
              "pizza": time(19),
              "fondue": time(18),
              "lunch": time(12),
-             "breakfast": time(7,30),
-             "bfast": time(7,30),
+             "breakfast": time(7, 30),
+             "bfast": time(7, 30),
              "coffee": time(10),
              "beer": time(17),
              "beers": time(17),
              "evening": time(20),
              "night": time(22),
              "morning": time(6),
-             "afternoon": time(15) }
+             "afternoon": time(15)}
 
     for t in title_toks:
         if t.match(times):
@@ -937,19 +968,21 @@ def compute_dates_and_times(d: dict) -> tuple:
 
     if "END_TIME" in d and end_time is None:
         end_time = norm_to_time(d["END_TIME"][0], st_time, "after")
-        
+
     if st_time is not None and end_time is None and "DURATION" in d:
         anchor = today
         dur = int(d["DURATION"][0].val)   # in minutes
-        if st_date is not None: anchor = st_date
+        if st_date is not None:
+            anchor = st_date
         dt = datetime.combine(anchor, st_time) + timedelta(minutes=dur)
-        if st_date is not None: end_date = dt.date() 
+        if st_date is not None:
+            end_date = dt.date()
         end_time = dt.time()
 
     return (st_date, end_date, st_time, end_time)
 
 
-def parse(raw: str, debug: bool = False, log: bool = False):
+def parse_event(raw: str, debug: bool = False, log: bool = False):
     """Parse a natural language string to a calendar event.
 
     Returns (start_date, end_date, start_time, end_time, title,
@@ -1005,7 +1038,8 @@ def parse(raw: str, debug: bool = False, log: bool = False):
     for t in nltk.pos_tag(tokenized):
         tok = EToken(*t)
         handle_spelled_number(tok)
-        if (tok.val == "@"): tok = EToken("at", "IN")
+        if (tok.val == "@"):
+            tok = EToken("at", "IN")
         temp_list.append(tok)
 
     if (debug):
@@ -1033,7 +1067,8 @@ def parse(raw: str, debug: bool = False, log: bool = False):
 
     # assume all unknown tokens are title
     for t in token_list:
-        if t.sem == "-": t.sem = "TITLE"
+        if t.sem == "-":
+            t.sem = "TITLE"
 
     # process tokens into a dict of tokens
     d = {}
@@ -1055,7 +1090,7 @@ def parse(raw: str, debug: bool = False, log: bool = False):
         location = clean_punctuation(" ".join([t.orig for t in d["LOCATION"]]))
     else:
         location = None
-        
+
     (st_date, end_date, st_time, end_time) = compute_dates_and_times(d)
 
     ret = (st_date, end_date, st_time, end_time, title, location)

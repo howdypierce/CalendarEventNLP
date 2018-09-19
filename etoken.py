@@ -1,4 +1,4 @@
-# etoken.py: Word token class abstraction 
+# etoken.py: Word token class abstraction
 #
 # Copyright (C) 2018 Cardinal Peak LLC
 #
@@ -17,7 +17,7 @@
 
 
 class EToken():
-    """One token in the string being parsed. 
+    """One token in the string being parsed.
 
     A token has the following attributes (all of type string unless noted):
 
@@ -30,7 +30,7 @@ class EToken():
         The parsed Part of Speech; see below for possible values
     .sem
         The semantic role of this token, from this set of values
-           DATE, ST_DATE, END_DATE 
+           DATE, ST_DATE, END_DATE
            TIME, ST_TIME, END_TIME
            TITLE
            LOCATION
@@ -99,24 +99,24 @@ class EToken():
     @property
     def time(self):
         return self._time
-    
+
     @time.setter
     def time(self, x):
         self._time = x
         if self.sem not in __class__.time_sems:
             self.sem = "TIME"
-    
+
     @property
     def date(self):
         return self._date
-    
+
     @date.setter
     def date(self, x):
         self._date = x
         if self.sem not in __class__.date_sems:
             self.sem = "DATE"
 
-    def match(self, val = None, pos = None, sem = None) -> bool:
+    def match(self, val=None, pos=None, sem=None) -> bool:
         """If this token matches all the supplied values, return True.
 
         val, pos, and sem can all be either None (matches everything),
@@ -163,7 +163,7 @@ class ETokenNull():
     def __repr__(self):
         return (f"NULL")
 
-    def match(self, val = None, pos = None, sem = None) -> bool:
+    def match(self, val=None, pos=None, sem=None) -> bool:
         """Always returns False"""
         return False
 
@@ -178,5 +178,3 @@ def padded(seq, target_length, padding=ETokenNull()):
     if length < target_length:
         ret.extend([padding] * (target_length - length))
     return ret
-
-

@@ -1,4 +1,4 @@
-# spelled_numbers.py: parse spelled numbers 
+# spelled_numbers.py: parse spelled numbers
 #
 # Copyright (C) 2018 Cardinal Peak LLC
 #
@@ -27,7 +27,7 @@ cardinals_to_num = {"one": "1",
                     "seven": "7",
                     "eight": "8",
                     "nine": "9",
-                    "ten": "10", 
+                    "ten": "10",
                     "eleven": "11",
                     "twelve": "12",
                     "thirteen": "13",
@@ -59,7 +59,7 @@ cardinals_to_num = {"one": "1",
                     "thirty": "30",
                     "thirtyone": "31",
                     "thirty-one": "31"}
-                    
+
 ordinals_to_num = {"first": "1",
                    "1st": "1",
                    "second": "2",
@@ -133,11 +133,12 @@ ordinals_to_num = {"first": "1",
                    "thirty-first": "31",
                    "31st": "31"}
 
+
 def handle_spelled_number(tok: EToken) -> None:
     """Try to parse the token as a (partially) spelled number.
 
     This function finds spelled-out tokens that represent numbers, or
-    a mix of digits and letters. 
+    a mix of digits and letters.
 
     These example strings should all be handled here:
        one
@@ -163,5 +164,4 @@ def handle_spelled_number(tok: EToken) -> None:
         tok.pos = "OD"
         tok.val = ordinals_to_num[tok.val]
 
-    return 
-
+    return

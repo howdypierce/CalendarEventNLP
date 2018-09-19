@@ -18,11 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
 import sys
 import urllib.parse
-from datetime import *
+from datetime import time, date, timedelta, datetime
 import subprocess
 import event_parser
+
 
 def convert_date_time(d: date, t: time) -> str:
     """Converts a date and time to a UTC string appropriate for passing to
@@ -47,7 +49,7 @@ def convert_date_time(d: date, t: time) -> str:
         return datetime.combine(d, t).strftime("%Y%m%dT%H%M%S")
     else:
         return d.strftime("%Y%m%d")
-    
+
 
 def parse_to_google_calendar(raw: str,
                              default_duration: int = 30,
@@ -59,15 +61,16 @@ def parse_to_google_calendar(raw: str,
     documented at https://stackoverflow.com/questions/22757908/google-calendar
     -render-action-template-parameter-documentation
 
-    See documentation for the parse() function for details on how the
-    raw string is processed
+    See documentation for the parse_event() function for details on
+    how the raw string is processed
 
     default_duration (in minutes) is the duration of the event, if
     only a start time (and not end time) can be determined from the
     input.
+
     """
 
-    ret = event_parser.parse(raw, debug, log=True)
+    ret = event_parser.parse_event(raw, debug, log=True)
     (st_date, end_date, st_time, end_time, title, loc) = ret
 
     if st_date is None:
@@ -76,18 +79,18 @@ def parse_to_google_calendar(raw: str,
 
     if st_time is not None and end_time is None:
         st_dt = datetime.combine(st_date, st_time)
-        end_dt = st_dt + timedelta(minutes = default_duration)
+        end_dt = st_dt + timedelta(minutes=default_duration)
         end_date = end_dt.date()
         end_time = end_dt.time()
 
     anchor = "https://calendar.google.com/calendar/event?"
 
     start = convert_date_time(st_date, st_time)
-    end = convert_date_time(st_date, end_time)
-    
-    params = { 'action' : 'TEMPLATE',
-               'text' : title,
-               'dates' : f"{start}/{end}" }
+    end = convert_date_time(end_date, end_time)
+
+    params = {'action': 'TEMPLATE',
+              'text': title,
+              'dates': f"{start}/{end}"}
     if loc:
         params['location'] = loc
 
